@@ -7,6 +7,7 @@ public class DBTest {
         Connection conn = DBConnection.getConnection();
         if (conn != null) {
             System.out.println("Ket noi DB thanh cong");
+            DBConnection.closeConnection();
         } else {
             System.out.println("Ket noi DB that bai");
         }

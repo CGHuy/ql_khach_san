@@ -1,6 +1,5 @@
 package com.ql_khach_san.config;
 
-import static com.mysql.cj.conf.PropertyKey.USER;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
