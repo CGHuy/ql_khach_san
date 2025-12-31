@@ -54,6 +54,6 @@ public class RoomView {
     public boolean isOccupied() {
         if (status == null) return false;
         String s = status.toLowerCase();
-        return s.contains("đã") || s.contains("có người") || s.contains("occupied") || s.contains("thuê") || s.contains("đặt");
+        return s.contains("đang thuê") || s.contains("đã đặt");
     }
 }

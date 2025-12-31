@@ -16,8 +16,8 @@ public class MainService {
 
     private static final Color COLOR_AVAILABLE = new Color(0, 200, 0);
     private static final Color COLOR_OCCUPIED = new Color(255, 0, 0);
-    private static final Color COLOR_PREPARE = new Color(0, 200, 200);
-    private static final Color COLOR_VIP = new Color(128, 0, 128);
+    private static final Color COLOR_CLEANING = new Color(0, 100, 255);
+    private static final Color COLOR_RESERVED = new Color(255, 165, 0);
 
     public MainService() {
         this.roomDAO = new RoomDAO();
@@ -63,24 +63,25 @@ public class MainService {
 
     private Color mapStatusToColor(String status, String typeName) {
         if (status == null) return COLOR_AVAILABLE;
-        String s = status.toLowerCase();
-        if (s.contains("đã") || s.contains("có người") || s.contains("occupied") || s.contains("thuê") || s.contains("đặt")) {
+        String s = status.toLowerCase().trim();
+        if (s.contains("trống")) {
+            return COLOR_AVAILABLE;
+        }
+        // Đỏ - Đang được thuê
+        if (s.contains("đang thuê")) {
             return COLOR_OCCUPIED;
         }
-        if (s.contains("dọn") || s.contains("don") || s.contains("clean")) {
-            return COLOR_PREPARE;
+        // Cam - Đã đặt trước
+        if (s.contains("đã đặt")) {
+            return COLOR_RESERVED;
         }
-        if (typeName != null && typeName.toLowerCase().contains("vip")) {
-            return COLOR_VIP;
+        // Xanh dương - Đang dọn dẹp (sau checkout)
+        if (s.contains("đang dọn")) {
+            return COLOR_CLEANING;
         }
         return COLOR_AVAILABLE;
     }
 
-    /**
-     * Extract floor string from a room number.
-     * Rules: find first continuous digit sequence; if length == 3 => use first digit;
-     * if length >= 4 => use first two digits; otherwise return the digit sequence.
-     */
     public String extractFloorFromRoomNumber(String roomNumber) {
         if (roomNumber == null) return "0";
         Matcher m = Pattern.compile("(\\d+)").matcher(roomNumber);

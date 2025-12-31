@@ -10,9 +10,7 @@ public class RoomActionService {
         this.roomDAO = new RoomDAO();
     }
 
-    /**
-     * Cập nhật trạng thái phòng
-     */
+    // Cập nhật trạng thái phòng
     public boolean updateRoomStatus(int roomId, String newStatus) {
         try {
             return roomDAO.updateStatus(roomId, newStatus);
@@ -22,9 +20,7 @@ public class RoomActionService {
         }
     }
 
-    /**
-     * Lấy thông tin phòng theo ID
-     */
+    // Lấy thông tin phòng theo ID
     public Room getRoomById(int roomId) {
         try {
             return roomDAO.getById(roomId);
@@ -34,37 +30,32 @@ public class RoomActionService {
         }
     }
 
-    /**
-     * Nhận phòng (check-in)
-     */
+    // Nhận phòng (check-in)
     public boolean checkInRoom(int roomId) {
         return updateRoomStatus(roomId, "Đã thuê");
     }
 
-    /**
-     * Trả phòng (check-out)
-     */
+    // Trả phòng (check-out)
     public boolean checkOutRoom(int roomId) {
-        return updateRoomStatus(roomId, "Trống");
+        return updateRoomStatus(roomId, "Đang dọn");
     }
 
-    /**
-     * Đánh dấu phòng cần dọn dẹp
-     */
+    // Đánh dấu phòng cần dọn dẹp
     public boolean markRoomForCleaning(int roomId) {
         return updateRoomStatus(roomId, "Đang dọn");
     }
 
-    /**
-     * Huỷ đặt phòng
-     */
+    // Đặt phòng
+    public boolean Reservation(int roomId) {
+        return updateRoomStatus(roomId, "Đã đặt");
+    }
+    
+    // Huỷ đặt phòng
     public boolean cancelReservation(int roomId) {
         return updateRoomStatus(roomId, "Trống");
     }
 
-    /**
-     * Kiểm tra xem phòng có được đặt hay không
-     */
+    // Kiểm tra xem phòng có được đặt hay không
     public boolean isRoomReserved(int roomId) {
         Room room = getRoomById(roomId);
         if (room == null) return false;
@@ -72,9 +63,7 @@ public class RoomActionService {
         return status.contains("đã") || status.contains("đặt") || status.contains("thuê");
     }
 
-    /**
-     * Kiểm tra xem phòng có trống không
-     */
+    // Kiểm tra xem phòng có trống không
     public boolean isRoomAvailable(int roomId) {
         Room room = getRoomById(roomId);
         if (room == null) return false;

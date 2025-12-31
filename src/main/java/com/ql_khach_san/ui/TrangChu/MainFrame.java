@@ -14,10 +14,10 @@ public class MainFrame extends JFrame {
     private JPanel roomPanel;
     
     // Room status colors
-    private static final Color COLOR_VIP = new Color(128, 0, 128);           // Tất Cả
+    private static final Color COLOR_RESERVED = new Color(255, 165, 0);       // Đã đặt
     private static final Color COLOR_AVAILABLE = new Color(0, 200, 0);       // Phòng Trống
     private static final Color COLOR_OCCUPIED = new Color(255, 0, 0);        // Đã có người ở
-    private static final Color COLOR_PREPARE = new Color(0, 200, 200);       // Phòng Đang Dọn Dẹp
+    private static final Color COLOR_CLEANING = new Color(0, 100, 255);      // Phòng Đang Dọn Dẹp
 
     public MainFrame() {
         setTitle("Quản Lý Khách Sạn");
