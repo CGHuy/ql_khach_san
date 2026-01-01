@@ -3,10 +3,10 @@ package com.ql_khach_san.ui.TrangChu;
 import com.ql_khach_san.dao.RoomDAO;
 import com.ql_khach_san.model.Room;
 
-public class RoomActionService {
+public class RoomService {
     private final RoomDAO roomDAO;
 
-    public RoomActionService() {
+    public RoomService() {
         this.roomDAO = new RoomDAO();
     }
 

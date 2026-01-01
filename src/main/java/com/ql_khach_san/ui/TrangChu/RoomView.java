@@ -51,9 +51,11 @@ public class RoomView {
         this.typeName = typeName;
     }
 
-    public boolean isOccupied() {
-        if (status == null) return false;
-        String s = status.toLowerCase();
-        return s.contains("đang thuê") || s.contains("đã đặt");
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setFloor(String floor) {    
+        this.floor = floor;
     }
 }

@@ -68,7 +68,7 @@ public class MainService {
             return COLOR_AVAILABLE;
         }
         // Đỏ - Đang được thuê
-        if (s.contains("đang thuê")) {
+        if (s.contains("đã thuê")) {
             return COLOR_OCCUPIED;
         }
         // Cam - Đã đặt trước

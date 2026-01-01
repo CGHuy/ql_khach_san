@@ -85,17 +85,15 @@ public class MainFrame extends JFrame {
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
         
         String[] menuItems = {
-            "🏠 Phòng",
-            "📊 Tầng",
-            "📝 Loại Phòng",
-            "🛎️ Dịch Vụ",
-            "📋 Loại Dịch Vụ",
-            "👥 Khách Hàng",
-            "👔 Nhân Viên",
-            "📈 Thống Kê",
-            "⏰ Thời Gian",
-            "🔐 Đổi Mật Khẩu",
-            "🚪 Đăng Xuất"
+            "Phòng",
+            "Loại Phòng",
+            "Dịch Vụ",
+            "Khách Hàng",
+            "Nhân Viên",
+            "Thống Kê",
+            "Thời Gian",
+            "Đổi Mật Khẩu",
+            "Đăng Xuất"
         };
         
         for (String item : menuItems) {
