@@ -1,0 +1,109 @@
+package com.ql_khach_san.dao;
+
+import com.ql_khach_san.model.Statistic;
+import com.ql_khach_san.config.DBConnection;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class StatisticDAO {
+    public boolean insertStatistic(Statistic statistic) {
+        String sql = "INSERT INTO statistic (stat_date, stat_period, revenue, room_revenue, service_revenue, customer_count, room_rented_count, service_count, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(statistic.getStatDate().getTime()));
+            ps.setString(2, statistic.getStatPeriod());
+            ps.setDouble(3, statistic.getRevenue());
+            ps.setDouble(4, statistic.getRoomRevenue());
+            ps.setDouble(5, statistic.getServiceRevenue());
+            ps.setInt(6, statistic.getCustomerCount());
+            ps.setInt(7, statistic.getRoomRentedCount());
+            ps.setInt(8, statistic.getServiceCount());
+            ps.setString(9, statistic.getNote());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateStatistic(Statistic statistic) {
+        String sql = "UPDATE statistic SET stat_date=?, stat_period=?, revenue=?, room_revenue=?, service_revenue=?, customer_count=?, room_rented_count=?, service_count=?, note=? WHERE statistic_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, new java.sql.Date(statistic.getStatDate().getTime()));
+            ps.setString(2, statistic.getStatPeriod());
+            ps.setDouble(3, statistic.getRevenue());
+            ps.setDouble(4, statistic.getRoomRevenue());
+            ps.setDouble(5, statistic.getServiceRevenue());
+            ps.setInt(6, statistic.getCustomerCount());
+            ps.setInt(7, statistic.getRoomRentedCount());
+            ps.setInt(8, statistic.getServiceCount());
+            ps.setString(9, statistic.getNote());
+            ps.setInt(10, statistic.getStatisticId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean deleteStatistic(int statisticId) {
+        String sql = "DELETE FROM statistic WHERE statistic_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, statisticId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public Statistic getStatisticById(int statisticId) {
+        String sql = "SELECT * FROM statistic WHERE statistic_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, statisticId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return extractStatistic(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Statistic> getAllStatistics() {
+        List<Statistic> list = new ArrayList<>();
+        String sql = "SELECT * FROM statistic ORDER BY stat_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(extractStatistic(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    private Statistic extractStatistic(ResultSet rs) throws SQLException {
+        Statistic s = new Statistic();
+        s.setStatisticId(rs.getInt("statistic_id"));
+        s.setStatDate(rs.getDate("stat_date"));
+        s.setStatPeriod(rs.getString("stat_period"));
+        s.setRevenue(rs.getDouble("revenue"));
+        s.setRoomRevenue(rs.getDouble("room_revenue"));
+        s.setServiceRevenue(rs.getDouble("service_revenue"));
+        s.setCustomerCount(rs.getInt("customer_count"));
+        s.setRoomRentedCount(rs.getInt("room_rented_count"));
+        s.setServiceCount(rs.getInt("service_count"));
+        s.setNote(rs.getString("note"));
+        s.setCreatedAt(rs.getTimestamp("created_at"));
+        return s;
+    }
+}
