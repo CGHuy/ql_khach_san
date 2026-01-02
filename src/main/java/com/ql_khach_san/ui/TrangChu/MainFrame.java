@@ -97,7 +97,7 @@ public class MainFrame extends JFrame {
             "🔐 Đổi Mật Khẩu",
             "🚪 Đăng Xuất"
         };
-        
+
         for (String item : menuItems) {
             JButton button = new JButton(item);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -108,7 +108,7 @@ public class MainFrame extends JFrame {
             button.setBorder(BorderFactory.createLineBorder(new Color(150, 120, 120), 1));
             button.setFocusPainted(false);
             button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
+
             button.addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseEntered(java.awt.event.MouseEvent evt) {
                     button.setBackground(new Color(180, 160, 160));
@@ -117,11 +117,24 @@ public class MainFrame extends JFrame {
                     button.setBackground(new Color(200, 180, 180));
                 }
             });
-            
+
+            // Thêm sự kiện cho nút Thống Kê
+            if (item.equals("📈 Thống Kê")) {
+                button.addActionListener(e -> {
+                    JFrame frame = new JFrame("Thống Kê Khách Sạn");
+                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    frame.setSize(900, 600);
+                    frame.setLocationRelativeTo(null);
+                    frame.setLayout(new BorderLayout());
+                    frame.add(new com.ql_khach_san.ui.ThongKe.StatisticPanel(), BorderLayout.CENTER);
+                    frame.setVisible(true);
+                });
+            }
+
             panel.add(button);
             panel.add(Box.createVerticalStrut(8));
         }
-        
+
         panel.add(Box.createVerticalGlue());
         return panel;
     }
