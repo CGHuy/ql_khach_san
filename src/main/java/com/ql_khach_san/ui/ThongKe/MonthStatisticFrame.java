@@ -31,6 +31,8 @@ public class MonthStatisticFrame extends JFrame {
         for (int m = 1; m <= 12; m++) cbMonth.addItem(String.format("%02d", m));
         JButton btnGen = new JButton("Generate");
         JButton btnSaveAgg = new JButton("Lưu tổng hợp tháng");
+        btnSaveAgg.setEnabled(false);
+        btnSaveAgg.setToolTipText("Lưu đã bị vô hiệu hoá; hệ thống hiển thị dữ liệu động.");
         control.add(new JLabel("Năm:")); control.add(cbYear);
         control.add(new JLabel("Tháng:")); control.add(cbMonth);
         control.add(btnGen); control.add(btnSaveAgg);
@@ -53,22 +55,7 @@ public class MonthStatisticFrame extends JFrame {
         });
 
         btnSaveAgg.addActionListener(e -> {
-            int y = Integer.parseInt((String)cbYear.getSelectedItem());
-            int m = Integer.parseInt((String)cbMonth.getSelectedItem());
-            Statistic stat = service.generateStatisticByMonth(y,m);
-            stat.setStatPeriod("month");
-            stat.setNote("Tổng hợp tháng " + String.format("%04d-%02d", y, m));
-            java.sql.Date sqlDate = java.sql.Date.valueOf(String.format("%04d-%02d-01", y, m));
-            boolean exists = service.existsStatistic(sqlDate, "month");
-            if (exists) {
-                int opt = JOptionPane.showConfirmDialog(this, "Đã tồn tại thống kê tháng này. Ghi đè?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-                if (opt != JOptionPane.YES_OPTION) return;
-                service.saveStatistic(stat, true);
-                JOptionPane.showMessageDialog(this, "Đã ghi đè thống kê tháng");
-            } else {
-                service.saveStatistic(stat, false);
-                JOptionPane.showMessageDialog(this, "Đã lưu thống kê tháng");
-            }
+            JOptionPane.showMessageDialog(this, "Lưu thống kê đã bị vô hiệu hoá; hệ thống chỉ hiển thị dữ liệu động.");
         });
     }
 

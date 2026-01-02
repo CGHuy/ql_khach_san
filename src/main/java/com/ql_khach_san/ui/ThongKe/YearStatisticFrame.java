@@ -32,7 +32,11 @@ public class YearStatisticFrame extends JFrame {
         for (int y = currentYear; y >= 2000; y--) cbYear.addItem(String.valueOf(y));
         JButton btnGen = new JButton("Generate");
         JButton btnSaveAgg = new JButton("Lưu tổng hợp năm");
+        btnSaveAgg.setEnabled(false);
+        btnSaveAgg.setToolTipText("Lưu đã bị vô hiệu hoá; hệ thống hiển thị dữ liệu động.");
         JButton btnViewSaved = new JButton("Xem thống kê đã lưu");
+        btnViewSaved.setEnabled(false);
+        btnViewSaved.setToolTipText("Xem đã lưu đã bị vô hiệu hoá; hệ thống hiển thị dữ liệu động.");
         leftControls.add(new JLabel("Năm:")); leftControls.add(cbYear);
         leftControls.add(btnGen); leftControls.add(btnSaveAgg); leftControls.add(btnViewSaved);
         control.add(leftControls, BorderLayout.WEST);
@@ -56,13 +60,7 @@ public class YearStatisticFrame extends JFrame {
         JTable tbl = new JTable(tableModel);
         add(new JScrollPane(tbl), BorderLayout.CENTER);
 
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnAdd = new JButton("Thêm thủ công");
-        JButton btnEdit = new JButton("Sửa ghi chú");
-        JButton btnDelete = new JButton("Xóa");
-        JButton btnRefresh = new JButton("Làm mới");
-        footer.add(btnAdd); footer.add(btnEdit); footer.add(btnDelete); footer.add(btnRefresh);
-        add(footer, BorderLayout.SOUTH);
+
 
         // actions
         btnGen.addActionListener(e -> {
@@ -71,32 +69,14 @@ public class YearStatisticFrame extends JFrame {
         });
 
         btnSaveAgg.addActionListener(e -> {
-            int y = Integer.parseInt((String)cbYear.getSelectedItem());
-            Statistic stat = service.generateStatisticByYear(y);
-            stat.setStatPeriod("year");
-            stat.setNote("Tổng hợp năm " + y);
-            java.sql.Date sqlDate = java.sql.Date.valueOf(String.format("%04d-01-01", y));
-            boolean exists = service.existsStatistic(sqlDate, "year");
-            if (exists) {
-                int opt = JOptionPane.showConfirmDialog(this, "Đã tồn tại thống kê năm này. Ghi đè?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-                if (opt != JOptionPane.YES_OPTION) return;
-                service.saveStatistic(stat, true);
-                JOptionPane.showMessageDialog(this, "Đã ghi đè thống kê năm");
-            } else {
-                service.saveStatistic(stat, false);
-                JOptionPane.showMessageDialog(this, "Đã lưu thống kê năm");
-            }
+            JOptionPane.showMessageDialog(this, "Lưu thống kê đã bị vô hiệu hoá; hệ thống chỉ hiển thị dữ liệu động.");
         });
 
         btnViewSaved.addActionListener(e -> {
-            int y = Integer.parseInt((String)cbYear.getSelectedItem());
-            loadSavedStatsForYear(y);
+            JOptionPane.showMessageDialog(this, "Xem thống kê đã lưu đã bị vô hiệu hoá; hệ thống chỉ hiển thị dữ liệu động.");
         });
 
-        btnRefresh.addActionListener(e -> {
-            int y = Integer.parseInt((String)cbYear.getSelectedItem());
-            loadForYear(y);
-        });
+
 
         btnChartType.addActionListener(e -> {
             chartIsBar = !chartIsBar;
@@ -104,46 +84,11 @@ public class YearStatisticFrame extends JFrame {
             if (viewingSaved) loadSavedStatsForYear(y); else loadForYear(y);
         });
 
-        btnAdd.addActionListener(e -> {
-            // open dialog to add manual statistic for the year
-            StatisticDialog dialog = new StatisticDialog(null, true);
-            dialog.setVisible(true);
-            if (dialog.isSaved()) {
-                Statistic s = dialog.getStatistic();
-                s.setStatPeriod("year");
-                service.saveStatistic(s, false);
-                loadSavedStatsForYear(Integer.parseInt((String)cbYear.getSelectedItem()));
-            }
-        });
 
-        btnEdit.addActionListener(e -> {
-            int row = tbl.getSelectedRow();
-            if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn dòng để sửa ghi chú!"); return; }
-            // Expecting saved-stats view; id stored in table hidden column? we'll store id in model by replacing first column
-            Object idObj = tbl.getValueAt(row, 0);
-            if (idObj == null) { JOptionPane.showMessageDialog(this, "Không có bản ghi để sửa ở chế độ này."); return; }
-            int id = Integer.parseInt(idObj.toString());
-            Statistic s = service.getStatisticById(id);
-            StatisticDialog dialog = new StatisticDialog(s);
-            dialog.setVisible(true);
-            if (dialog.isSaved()) {
-                service.updateStatistic(dialog.getStatistic());
-                loadSavedStatsForYear(Integer.parseInt((String)cbYear.getSelectedItem()));
-            }
-        });
 
-        btnDelete.addActionListener(e -> {
-            int row = tbl.getSelectedRow();
-            if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn dòng để xóa!"); return; }
-            Object idObj = tbl.getValueAt(row, 0);
-            if (idObj == null) { JOptionPane.showMessageDialog(this, "Không có bản ghi để xóa ở chế độ này."); return; }
-            int id = Integer.parseInt(idObj.toString());
-            int confirm = JOptionPane.showConfirmDialog(this, "Xóa bản ghi này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                service.deleteStatistic(id);
-                loadSavedStatsForYear(Integer.parseInt((String)cbYear.getSelectedItem()));
-            }
-        });
+
+
+
     }
 
     private void loadForYear(int year) {
@@ -166,14 +111,14 @@ public class YearStatisticFrame extends JFrame {
         // Load saved statistics for this year and show in table: ID | Date | Period | Revenue | note
         java.util.List<com.ql_khach_san.model.Statistic> list = service.getStatisticsByPeriod("year");
         tableModel.setRowCount(0);
-        // change table to columns: ID, Date, Period, Revenue, Note
-        tableModel.setColumnIdentifiers(new String[]{"ID", "Ngày", "Kỳ", "Doanh thu", "Ghi chú"});
+        // change table to columns: ID, Date, Revenue, Note
+        tableModel.setColumnIdentifiers(new String[]{"ID", "Ngày", "Doanh thu", "Ghi chú"});
         for (com.ql_khach_san.model.Statistic s : list) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTime(s.getStatDate());
             int y = cal.get(java.util.Calendar.YEAR);
             if (y == year) {
-                tableModel.addRow(new Object[]{s.getStatisticId(), s.getStatDate(), s.getStatPeriod(), s.getRevenue(), s.getNote()});
+                tableModel.addRow(new Object[]{s.getStatisticId(), s.getStatDate(), s.getRevenue(), s.getNote()});
             }
         }
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();

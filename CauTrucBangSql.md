@@ -100,18 +100,3 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES employee(employee_id)
 
 );
-
--- 10. THỐNG KÊ
-CREATE TABLE statistic (
-statistic_id INT PRIMARY KEY AUTO_INCREMENT,
-stat_date DATE NOT NULL,
-stat_period VARCHAR(20) NOT NULL, -- 'day', 'month', 'year'
-revenue DECIMAL(18,2) DEFAULT 0,
-room_revenue DECIMAL(18,2) DEFAULT 0,
-service_revenue DECIMAL(18,2) DEFAULT 0,
-customer_count INT DEFAULT 0,
-room_rented_count INT DEFAULT 0,
-service_count INT DEFAULT 0,
-note VARCHAR(255),
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);

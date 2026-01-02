@@ -8,102 +8,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StatisticDAO {
+    @Deprecated
     public boolean insertStatistic(Statistic statistic) {
-        String sql = "INSERT INTO statistic (stat_date, stat_period, revenue, room_revenue, service_revenue, customer_count, room_rented_count, service_count, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, new java.sql.Date(statistic.getStatDate().getTime()));
-            ps.setString(2, statistic.getStatPeriod());
-            ps.setDouble(3, statistic.getRevenue());
-            ps.setDouble(4, statistic.getRoomRevenue());
-            ps.setDouble(5, statistic.getServiceRevenue());
-            ps.setInt(6, statistic.getCustomerCount());
-            ps.setInt(7, statistic.getRoomRentedCount());
-            ps.setInt(8, statistic.getServiceCount());
-            ps.setString(9, statistic.getNote());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        throw new UnsupportedOperationException("Manual statistic persistence is disabled. Use live computed data instead.");
     }
 
+    @Deprecated
     public boolean updateStatistic(Statistic statistic) {
-        String sql = "UPDATE statistic SET stat_date=?, stat_period=?, revenue=?, room_revenue=?, service_revenue=?, customer_count=?, room_rented_count=?, service_count=?, note=? WHERE statistic_id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, new java.sql.Date(statistic.getStatDate().getTime()));
-            ps.setString(2, statistic.getStatPeriod());
-            ps.setDouble(3, statistic.getRevenue());
-            ps.setDouble(4, statistic.getRoomRevenue());
-            ps.setDouble(5, statistic.getServiceRevenue());
-            ps.setInt(6, statistic.getCustomerCount());
-            ps.setInt(7, statistic.getRoomRentedCount());
-            ps.setInt(8, statistic.getServiceCount());
-            ps.setString(9, statistic.getNote());
-            ps.setInt(10, statistic.getStatisticId());
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        throw new UnsupportedOperationException("Manual statistic persistence is disabled. Use live computed data instead.");
     }
 
+    @Deprecated
     public boolean deleteStatistic(int statisticId) {
-        String sql = "DELETE FROM statistic WHERE statistic_id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, statisticId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        throw new UnsupportedOperationException("Manual statistic deletion is disabled. Use live computed data instead.");
     }
 
+    @Deprecated
     public Statistic getStatisticById(int statisticId) {
-        String sql = "SELECT * FROM statistic WHERE statistic_id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, statisticId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return extractStatistic(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("Fetching saved statistics by ID is deprecated in live-only mode.");
     }
 
+    @Deprecated
     public Statistic getStatisticByDateAndPeriod(java.sql.Date date, String period) {
-        String sql = "SELECT * FROM statistic WHERE stat_date = ? AND stat_period = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, date);
-            ps.setString(2, period);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return extractStatistic(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("Fetching saved statistics is deprecated in live-only mode.");
     }
 
+    @Deprecated
     public boolean existsStatistic(java.sql.Date date, String period) {
-        String sql = "SELECT 1 FROM statistic WHERE stat_date = ? AND stat_period = ? LIMIT 1";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setDate(1, date);
-            ps.setString(2, period);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        throw new UnsupportedOperationException("Checking existence in saved statistics is deprecated in live-only mode.");
     }
 
     public List<Statistic> getAllStatistics() {

@@ -17,7 +17,6 @@ public class StatisticPanel extends JPanel {
     private StatisticService statisticService;
     private JTable table;
     private DefaultTableModel tableModel;
-    private JButton btnAdd, btnEdit, btnDelete, btnRefresh, btnAuto;
     private ChartPanel chartPanel;
     private JSpinner spinnerDate;
     private javax.swing.Timer autoComputeTimer;
@@ -33,7 +32,7 @@ public class StatisticPanel extends JPanel {
     }
 
     private void initTable() {
-        String[] columns = {"ID", "Ngày", "Kỳ", "Doanh thu", "Phòng", "Dịch vụ", "Số khách", "Số phòng", "Số dịch vụ", "Ghi chú"};
+        String[] columns = {"ID", "Ngày", "Doanh thu", "Phòng", "Dịch vụ", "Số khách", "Số phòng", "Ghi chú"};
         tableModel = new DefaultTableModel(columns, 0) {
             public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -42,25 +41,10 @@ public class StatisticPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private JPanel topControlPanel;
+
 
     private void initButtons() {
-        // Build bottom action panel
-        JPanel panel = new JPanel();
-        btnAdd = new JButton("Thêm thủ công");
-        btnEdit = new JButton("Sửa ghi chú");
-        btnDelete = new JButton("Xóa");
-        btnRefresh = new JButton("Làm mới");
-        panel.add(btnAdd);
-        panel.add(btnEdit);
-        panel.add(btnDelete);
-        panel.add(btnRefresh);
-        add(panel, BorderLayout.SOUTH);
 
-        btnAdd.addActionListener(e -> showAddDialog());
-        btnEdit.addActionListener(e -> showEditNoteDialog());
-        btnDelete.addActionListener(e -> deleteSelected());
-        btnRefresh.addActionListener(e -> loadData());
 
         // Top controls: default Day only, plus buttons to open Month/Year dialogs
         JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -133,44 +117,13 @@ public class StatisticPanel extends JPanel {
     }
 
     private void loadData(String period) {
-        // if in live mode, compute range ending at spinner value
-        if (showLive) {
-            try {
-                java.util.Date d = (java.util.Date) spinnerDate.getValue();
-                computeRangeEndingAt(d);
-            } catch (Exception ex) {
-                // fallback to saved view if spinner invalid
-                showLive = false; // fall back
-            }
-            return;
+        // Live-only: compute range ending at spinner value
+        try {
+            java.util.Date d = (java.util.Date) spinnerDate.getValue();
+            computeRangeEndingAt(d);
+        } catch (Exception ex) {
+            // ignore invalid spinner
         }
-
-        // restore full columns for saved view
-        String[] fullCols = new String[]{"ID", "Ngày", "Kỳ", "Doanh thu", "Phòng", "Dịch vụ", "Số khách", "Số phòng", "Số dịch vụ", "Ghi chú"};
-        tableModel.setColumnIdentifiers(fullCols);
-        tableModel.setRowCount(0);
-        inComparisonView = false;
-        lastComparisonData = null;
-        if (btnEdit != null) btnEdit.setEnabled(true);
-        if (btnDelete != null) btnDelete.setEnabled(true);
-        List<Statistic> list;
-        if (period == null) list = statisticService.getAllStatistics();
-        else list = statisticService.getStatisticsByPeriod(period);
-        for (Statistic s : list) {
-            tableModel.addRow(new Object[]{
-                s.getStatisticId(),
-                s.getStatDate(),
-                s.getStatPeriod(),
-                s.getRevenue(),
-                s.getRoomRevenue(),
-                s.getServiceRevenue(),
-                s.getCustomerCount(),
-                s.getRoomRentedCount(),
-                s.getServiceCount(),
-                s.getNote()
-            });
-        }
-        updateChart(list);
     }
 
     private void generateForSelectedPeriod(String period, String input) {
@@ -201,19 +154,8 @@ public class StatisticPanel extends JPanel {
             }
             stat.setStatPeriod(period);
             stat.setNote("");
-            // Duplicate check
-            boolean exists = statisticService.existsStatistic(sqlDate, period);
-            if (exists) {
-                int opt = JOptionPane.showOptionDialog(this, "Đã tồn tại thống kê cho kỳ này. Ghi đè?", "Trùng bản ghi", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, new String[]{"Ghi đè", "Bỏ qua", "Hủy"}, "Bỏ qua");
-                if (opt == JOptionPane.CLOSED_OPTION || opt == 2) return; // cancel
-                if (opt == 1) return; // skip
-                // opt == 0 -> overwrite
-                boolean saved = statisticService.saveStatistic(stat, true);
-                if (saved) JOptionPane.showMessageDialog(this, "Đã ghi đè thống kê thành công");
-            } else {
-                boolean saved = statisticService.saveStatistic(stat, false);
-                if (saved) JOptionPane.showMessageDialog(this, "Đã tạo thống kê thành công");
-            }
+            // Saving is disabled in live-only mode
+            JOptionPane.showMessageDialog(this, "Lưu thủ công đã bị vô hiệu hoá; hệ thống hiển thị dữ liệu động từ các bảng nguồn.");
             if ("day".equals(period)) {
                 // keep comparison view
                 if (lastComparisonData != null) displayDailyRevenueComparison(lastComparisonData);
@@ -233,33 +175,29 @@ public class StatisticPanel extends JPanel {
     private boolean inComparisonView = false;
 
     // Live vs saved view
-    private boolean showLive = true; // default to live computed view
+
 
     /**
      * Display a computed range of daily statistics (full columns)
      */
     private void displayComputedRange(java.util.List<Statistic> list) {
         // full columns
-        String[] fullCols = new String[]{"Ngày", "Kỳ", "Doanh thu", "Phòng", "Dịch vụ", "Số khách", "Số phòng", "Số dịch vụ"};
+        String[] fullCols = new String[]{"Ngày", "Doanh thu", "Phòng", "Dịch vụ", "Số khách", "Số phòng"};
         tableModel.setColumnIdentifiers(fullCols);
         tableModel.setRowCount(0);
         for (Statistic s : list) {
             tableModel.addRow(new Object[]{
                 s.getStatDate(),
-                s.getStatPeriod(),
                 s.getRevenue(),
                 s.getRoomRevenue(),
                 s.getServiceRevenue(),
                 s.getCustomerCount(),
-                s.getRoomRentedCount(),
-                s.getServiceCount()
+                s.getRoomRentedCount()
             });
         }
         // update chart
         updateChart(list);
-        // disable edit/delete since these are computed (not saved)
-        if (btnEdit != null) btnEdit.setEnabled(false);
-        if (btnDelete != null) btnDelete.setEnabled(false);
+
     }
 
     /**
@@ -276,9 +214,7 @@ public class StatisticPanel extends JPanel {
     private void displayDailyRevenueComparison(java.util.List<String[]> data) {
         this.lastComparisonData = data;
         this.inComparisonView = true;
-        // Disable edit/delete in comparison mode
-        if (btnEdit != null) btnEdit.setEnabled(false);
-        if (btnDelete != null) btnDelete.setEnabled(false);
+
         // Set simple columns Date / Revenue
         String[] cols = new String[] {"Ngày", "Doanh thu"};
         tableModel.setColumnIdentifiers(cols);
@@ -308,8 +244,7 @@ public class StatisticPanel extends JPanel {
     private void computeForSpinnerDate() {
         try {
             java.util.Date d = (java.util.Date) spinnerDate.getValue();
-            if (showLive) computeRangeEndingAt(d);
-            else computeForDate(d);
+            computeRangeEndingAt(d);
         } catch (Exception ex) {
             // ignore invalid state
         }
@@ -386,15 +321,7 @@ public class StatisticPanel extends JPanel {
         chartPanel.setChart(chart);
     }
 
-    private void showAddDialog() {
-        // Thêm thủ công (vẫn giữ cho trường hợp đặc biệt)
-        StatisticDialog dialog = new StatisticDialog(null, true);
-        dialog.setVisible(true);
-        if (dialog.isSaved()) {
-            statisticService.addStatistic(dialog.getStatistic());
-            loadData();
-        }
-    }
+
 
     private void showAutoDialog() {
         String period = JOptionPane.showInputDialog(this, "Chọn kỳ thống kê (day/month/year):", "day");
@@ -429,7 +356,7 @@ public class StatisticPanel extends JPanel {
             // Cho phép nhập ghi chú nếu muốn
             String note = JOptionPane.showInputDialog(this, "Ghi chú (nếu có):");
             autoStat.setNote(note);
-            statisticService.addStatistic(autoStat);
+            // Saving is disabled; just compute and display
             if (period.equals("day")) {
                 java.sql.Date d = new java.sql.Date(autoStat.getStatDate().getTime());
                 java.util.List<String[]> nearby = statisticService.getNearestDaysRevenue(d, 7);
@@ -437,36 +364,15 @@ public class StatisticPanel extends JPanel {
             } else {
                 loadData();
             }
-            JOptionPane.showMessageDialog(this, "Đã tạo thống kê tự động cho kỳ " + period);
+            JOptionPane.showMessageDialog(this, "Lưu tự động đã bị vô hiệu hoá; dữ liệu chỉ hiển thị động.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Ngày/Kỳ không hợp lệ hoặc lỗi: " + ex.getMessage());
         }
     }
 
-    private void showEditNoteDialog() {
-        int row = table.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn dòng để sửa ghi chú!"); return; }
-        int id = (int) tableModel.getValueAt(row, 0);
-        Statistic s = statisticService.getStatisticById(id);
-        // Sử dụng dialog để sửa (chỉ mở trường ghi chú)
-        StatisticDialog dialog = new StatisticDialog(s);
-        dialog.setVisible(true);
-        if (dialog.isSaved()) {
-            statisticService.updateStatistic(dialog.getStatistic());
-            loadData();
-        }
-    }
 
-    private void deleteSelected() {
-        int row = table.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Chọn dòng để xóa!"); return; }
-        int id = (int) tableModel.getValueAt(row, 0);
-        int confirm = JOptionPane.showConfirmDialog(this, "Xóa bản ghi này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            statisticService.deleteStatistic(id);
-            loadData();
-        }
-    }
+
+
 
     private void showMonthDialog() {
         JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), "Thống kê tháng", Dialog.ModalityType.APPLICATION_MODAL);

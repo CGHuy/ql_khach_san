@@ -10,7 +10,7 @@ import java.util.Date;
 public class StatisticDialog extends JDialog {
     private boolean saved = false;
     private Statistic statistic;
-    private JTextField tfDate, tfPeriod, tfRevenue, tfRoomRevenue, tfServiceRevenue, tfCustomerCount, tfRoomRentedCount, tfServiceCount, tfNote;
+    private JTextField tfDate, tfPeriod, tfRevenue, tfRoomRevenue, tfServiceRevenue, tfCustomerCount, tfRoomRentedCount, tfNote;
     private JButton btnSave, btnCancel;
     private boolean allowAllFields;
 
@@ -21,10 +21,10 @@ public class StatisticDialog extends JDialog {
         setModal(true);
         setSize(400, 400);
         setLocationRelativeTo(null);
-        setLayout(new GridLayout(11, 2, 5, 5));
+        setLayout(new GridLayout(9, 2, 5, 5));
         initFields();
         if (s != null) setFields(s);
-        btnSave = new JButton("Lưu");
+        btnSave = new JButton("OK");
         btnCancel = new JButton("Hủy");
         add(btnSave); add(btnCancel);
         btnSave.addActionListener(e -> save());
@@ -47,7 +47,7 @@ public class StatisticDialog extends JDialog {
         add(new JLabel("Doanh thu dịch vụ:")); tfServiceRevenue = new JTextField(); add(tfServiceRevenue);
         add(new JLabel("Số khách:")); tfCustomerCount = new JTextField(); add(tfCustomerCount);
         add(new JLabel("Số phòng thuê:")); tfRoomRentedCount = new JTextField(); add(tfRoomRentedCount);
-        add(new JLabel("Số dịch vụ:")); tfServiceCount = new JTextField(); add(tfServiceCount);
+
         add(new JLabel("Ghi chú:")); tfNote = new JTextField(); add(tfNote);
     }
 
@@ -61,7 +61,6 @@ public class StatisticDialog extends JDialog {
         tfServiceRevenue.setEditable(allFieldsEditable);
         tfCustomerCount.setEditable(allFieldsEditable);
         tfRoomRentedCount.setEditable(allFieldsEditable);
-        tfServiceCount.setEditable(allFieldsEditable);
         tfNote.setEditable(true); // luôn cho phép sửa ghi chú
     }
 
@@ -74,46 +73,15 @@ public class StatisticDialog extends JDialog {
         tfServiceRevenue.setText(String.valueOf(s.getServiceRevenue()));
         tfCustomerCount.setText(String.valueOf(s.getCustomerCount()));
         tfRoomRentedCount.setText(String.valueOf(s.getRoomRentedCount()));
-        tfServiceCount.setText(String.valueOf(s.getServiceCount()));
         tfNote.setText(s.getNote());
         this.statistic = s;
     }
 
     private void save() {
-        try {
-            if (allowAllFields) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                Date date = sdf.parse(tfDate.getText().trim());
-                String period = tfPeriod.getText().trim();
-                double revenue = Double.parseDouble(tfRevenue.getText().trim());
-                double roomRevenue = Double.parseDouble(tfRoomRevenue.getText().trim());
-                double serviceRevenue = Double.parseDouble(tfServiceRevenue.getText().trim());
-                int customerCount = Integer.parseInt(tfCustomerCount.getText().trim());
-                int roomRentedCount = Integer.parseInt(tfRoomRentedCount.getText().trim());
-                int serviceCount = Integer.parseInt(tfServiceCount.getText().trim());
-                String note = tfNote.getText().trim();
-                if (statistic == null) statistic = new Statistic();
-                statistic.setStatDate(date);
-                statistic.setStatPeriod(period);
-                statistic.setRevenue(revenue);
-                statistic.setRoomRevenue(roomRevenue);
-                statistic.setServiceRevenue(serviceRevenue);
-                statistic.setCustomerCount(customerCount);
-                statistic.setRoomRentedCount(roomRentedCount);
-                statistic.setServiceCount(serviceCount);
-                statistic.setNote(note);
-            } else {
-                // Chỉ cho phép sửa ghi chú
-                String note = tfNote.getText().trim();
-                if (statistic != null) {
-                    statistic.setNote(note);
-                }
-            }
-            saved = true;
-            dispose();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Dữ liệu không hợp lệ!\n" + ex.getMessage());
-        }
+        // Persistence disabled in live-only mode; dialog is view-only
+        JOptionPane.showMessageDialog(this, "Lưu đã bị vô hiệu hoá; dialog chỉ để xem/ghi chú cục bộ.");
+        saved = false;
+        dispose();
     }
 
     public boolean isSaved() { return saved; }

@@ -15,20 +15,24 @@ public class StatisticService {
         this.statisticDAO = new StatisticDAO();
     }
 
+    @Deprecated
     public boolean addStatistic(Statistic statistic) {
-        return statisticDAO.insertStatistic(statistic);
+        throw new UnsupportedOperationException("Manual add is disabled; statistics are computed dynamically.");
     }
 
+    @Deprecated
     public boolean updateStatistic(Statistic statistic) {
-        return statisticDAO.updateStatistic(statistic);
+        throw new UnsupportedOperationException("Manual update is disabled; statistics are computed dynamically.");
     }
 
+    @Deprecated
     public boolean deleteStatistic(int statisticId) {
-        return statisticDAO.deleteStatistic(statisticId);
+        throw new UnsupportedOperationException("Manual delete is disabled; statistics are computed dynamically.");
     }
 
+    @Deprecated
     public Statistic getStatisticById(int statisticId) {
-        return statisticDAO.getStatisticById(statisticId);
+        throw new UnsupportedOperationException("Fetching saved statistics by ID is deprecated in live-only mode.");
     }
 
     public List<Statistic> getAllStatistics() {
@@ -68,17 +72,55 @@ public class StatisticService {
                 ps.setDate(1, date);
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        statistic.setCustomerCount(rs.getInt("customer_count"));
+                        int cnt = rs.getInt("customer_count");
+                        statistic.setCustomerCount(cnt);
                     }
                 }
             }
-            String sqlRoom = "SELECT COUNT(DISTINCT room_id) AS room_rented_count FROM checkin WHERE DATE(checkin_time) = ?";
+            // Fallback: if no checkin-based customers found, infer from invoices for the date
+            if (statistic.getCustomerCount() == 0) {
+                String sqlCustomerFromInvoice = "SELECT COUNT(DISTINCT r.customer_id) AS customer_count FROM invoice i JOIN checkin ci ON i.checkin_id = ci.checkin_id JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE DATE(i.created_at) = ?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlCustomerFromInvoice)) {
+                    ps.setDate(1, date);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int cnt2 = rs.getInt("customer_count");
+                            if (cnt2 > 0) {
+                                statistic.setCustomerCount(cnt2);
+                                System.out.println("[StatisticService] Fallback customer_count from invoice used for date=" + date + ": " + cnt2);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            // room_id is stored on reservation, so join reservation to get room_id
+            String sqlRoom = "SELECT COUNT(DISTINCT r.room_id) AS room_rented_count FROM checkin ci JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE DATE(ci.checkin_time) = ?";
             try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlRoom)) {
                 ps.setDate(1, date);
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         statistic.setRoomRentedCount(rs.getInt("room_rented_count"));
                     }
+                }
+            }
+            // Fallback: infer from invoices linked to reservations
+            if (statistic.getRoomRentedCount() == 0) {
+                String sqlRoomFromInvoice = "SELECT COUNT(DISTINCT r.room_id) AS room_rented_count FROM invoice i JOIN checkin ci ON i.checkin_id = ci.checkin_id JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE DATE(i.created_at) = ?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlRoomFromInvoice)) {
+                    ps.setDate(1, date);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int cnt2 = rs.getInt("room_rented_count");
+                            if (cnt2 > 0) {
+                                statistic.setRoomRentedCount(cnt2);
+                                System.out.println("[StatisticService] Fallback room_rented_count from invoice used for date=" + date + ": " + cnt2);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
             String sqlService = "SELECT SUM(quantity) AS service_count FROM service_usage WHERE DATE(created_at) = ?";
@@ -119,11 +161,32 @@ public class StatisticService {
                 ps.setInt(2, month);
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        statistic.setCustomerCount(rs.getInt("customer_count"));
+                        int cnt = rs.getInt("customer_count");
+                        statistic.setCustomerCount(cnt);
                     }
                 }
             }
-            String sqlRoom = "SELECT COUNT(DISTINCT room_id) AS room_rented_count FROM checkin WHERE YEAR(checkin_time) = ? AND MONTH(checkin_time) = ?";
+            // Fallback: infer from invoices within month if checkin-based count is zero
+            if (statistic.getCustomerCount() == 0) {
+                String sqlCustomerFromInvoice = "SELECT COUNT(DISTINCT r.customer_id) AS customer_count FROM invoice i JOIN checkin ci ON i.checkin_id = ci.checkin_id JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE YEAR(i.created_at)=? AND MONTH(i.created_at)=?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlCustomerFromInvoice)) {
+                    ps.setInt(1, year);
+                    ps.setInt(2, month);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int cnt2 = rs.getInt("customer_count");
+                            if (cnt2 > 0) {
+                                statistic.setCustomerCount(cnt2);
+                                System.out.println("[StatisticService] Fallback customer_count from invoice used for month=" + year + "-" + month + ": " + cnt2);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            // room_id is on reservation, join to get room_id
+            String sqlRoom = "SELECT COUNT(DISTINCT r.room_id) AS room_rented_count FROM checkin ci JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE YEAR(ci.checkin_time) = ? AND MONTH(ci.checkin_time) = ?";
             try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlRoom)) {
                 ps.setInt(1, year);
                 ps.setInt(2, month);
@@ -131,6 +194,25 @@ public class StatisticService {
                     if (rs.next()) {
                         statistic.setRoomRentedCount(rs.getInt("room_rented_count"));
                     }
+                }
+            }
+            // Fallback: infer from invoices linked to reservations
+            if (statistic.getRoomRentedCount() == 0) {
+                String sqlRoomFromInvoice = "SELECT COUNT(DISTINCT r.room_id) AS room_rented_count FROM invoice i JOIN checkin ci ON i.checkin_id = ci.checkin_id JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE YEAR(i.created_at)=? AND MONTH(i.created_at)=?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlRoomFromInvoice)) {
+                    ps.setInt(1, year);
+                    ps.setInt(2, month);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int cnt2 = rs.getInt("room_rented_count");
+                            if (cnt2 > 0) {
+                                statistic.setRoomRentedCount(cnt2);
+                                System.out.println("[StatisticService] Fallback room_rented_count from invoice used for month=" + year + "-" + month + ": " + cnt2);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
             String sqlService = "SELECT SUM(quantity) AS service_count FROM service_usage WHERE YEAR(created_at) = ? AND MONTH(created_at) = ?";
@@ -170,17 +252,55 @@ public class StatisticService {
                 ps.setInt(1, year);
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        statistic.setCustomerCount(rs.getInt("customer_count"));
+                        int cnt = rs.getInt("customer_count");
+                        statistic.setCustomerCount(cnt);
                     }
                 }
             }
-            String sqlRoom = "SELECT COUNT(DISTINCT room_id) AS room_rented_count FROM checkin WHERE YEAR(checkin_time) = ?";
+            // Fallback: infer from invoices in the year
+            if (statistic.getCustomerCount() == 0) {
+                String sqlCustomerFromInvoice = "SELECT COUNT(DISTINCT r.customer_id) AS customer_count FROM invoice i JOIN checkin ci ON i.checkin_id = ci.checkin_id JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE YEAR(i.created_at)=?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlCustomerFromInvoice)) {
+                    ps.setInt(1, year);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int cnt2 = rs.getInt("customer_count");
+                            if (cnt2 > 0) {
+                                statistic.setCustomerCount(cnt2);
+                                System.out.println("[StatisticService] Fallback customer_count from invoice used for year=" + year + ": " + cnt2);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            // room_id is on reservation, join to get room_id
+            String sqlRoom = "SELECT COUNT(DISTINCT r.room_id) AS room_rented_count FROM checkin ci JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE YEAR(ci.checkin_time) = ?";
             try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlRoom)) {
                 ps.setInt(1, year);
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         statistic.setRoomRentedCount(rs.getInt("room_rented_count"));
                     }
+                }
+            }
+            // Fallback: infer from invoices linked to reservations
+            if (statistic.getRoomRentedCount() == 0) {
+                String sqlRoomFromInvoice = "SELECT COUNT(DISTINCT r.room_id) AS room_rented_count FROM invoice i JOIN checkin ci ON i.checkin_id = ci.checkin_id JOIN reservation r ON ci.reservation_id = r.reservation_id WHERE YEAR(i.created_at)=?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlRoomFromInvoice)) {
+                    ps.setInt(1, year);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int cnt2 = rs.getInt("room_rented_count");
+                            if (cnt2 > 0) {
+                                statistic.setRoomRentedCount(cnt2);
+                                System.out.println("[StatisticService] Fallback room_rented_count from invoice used for year=" + year + ": " + cnt2);
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             }
             String sqlService = "SELECT SUM(quantity) AS service_count FROM service_usage WHERE YEAR(created_at) = ?";
@@ -199,31 +319,17 @@ public class StatisticService {
     }
 
     // Check existence by date/period
+    @Deprecated
     public boolean existsStatistic(java.sql.Date date, String period) {
-        return statisticDAO.existsStatistic(date, period);
+        throw new UnsupportedOperationException("Checking saved statistics is deprecated in live-only mode.");
     }
 
+    @Deprecated
     /**
-     * Save statistic with optional overwrite if exists
-     * @param stat statistic to save
-     * @param overwrite if true, update existing record
-     * @return true if inserted/updated
+     * Save statistic with optional overwrite if exists - deprecated in live-only mode
      */
     public boolean saveStatistic(Statistic stat, boolean overwrite) {
-        // Convert stat_date to sql.Date if necessary
-        java.sql.Date sqlDate = new java.sql.Date(stat.getStatDate().getTime());
-        String period = stat.getStatPeriod();
-        if (existsStatistic(sqlDate, period)) {
-            if (!overwrite) return false;
-            Statistic existing = statisticDAO.getStatisticByDateAndPeriod(sqlDate, period);
-            if (existing != null) {
-                stat.setStatisticId(existing.getStatisticId());
-                return statisticDAO.updateStatistic(stat);
-            }
-            return false;
-        } else {
-            return statisticDAO.insertStatistic(stat);
-        }
+        throw new UnsupportedOperationException("Manual save is disabled; statistics are computed dynamically.");
     }
 
     /**
