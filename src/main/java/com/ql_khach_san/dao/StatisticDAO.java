@@ -76,6 +76,36 @@ public class StatisticDAO {
         return null;
     }
 
+    public Statistic getStatisticByDateAndPeriod(java.sql.Date date, String period) {
+        String sql = "SELECT * FROM statistic WHERE stat_date = ? AND stat_period = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, date);
+            ps.setString(2, period);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return extractStatistic(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean existsStatistic(java.sql.Date date, String period) {
+        String sql = "SELECT 1 FROM statistic WHERE stat_date = ? AND stat_period = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, date);
+            ps.setString(2, period);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public List<Statistic> getAllStatistics() {
         List<Statistic> list = new ArrayList<>();
         String sql = "SELECT * FROM statistic ORDER BY stat_date DESC";
@@ -88,6 +118,86 @@ public class StatisticDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return list;
+    }
+
+    public List<Statistic> getStatisticsByPeriod(String period) {
+        List<Statistic> list = new ArrayList<>();
+        String sql = "SELECT * FROM statistic WHERE stat_period = ? ORDER BY stat_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, period);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(extractStatistic(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Get revenue grouped by day for a given month
+     * returns list of arrays ["yyyy-MM-dd", revenue]
+     */
+    public List<String[]> getDailyRevenueForMonth(int year, int month) {
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT DATE(created_at) as d, SUM(total_amount) as revenue FROM invoice WHERE YEAR(created_at)=? AND MONTH(created_at)=? GROUP BY DATE(created_at) ORDER BY DATE(created_at)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            ps.setInt(2, month);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new String[] { rs.getDate("d").toString(), String.valueOf(rs.getDouble("revenue")) });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Get revenue grouped by month for a given year
+     * returns list of arrays ["yyyy-MM", revenue]
+     */
+    public List<String[]> getMonthlyRevenueForYear(int year) {
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT YEAR(created_at) as y, MONTH(created_at) as m, SUM(total_amount) as revenue FROM invoice WHERE YEAR(created_at)=? GROUP BY YEAR(created_at), MONTH(created_at) ORDER BY MONTH(created_at)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String label = String.format("%04d-%02d", rs.getInt("y"), rs.getInt("m"));
+                list.add(new String[] { label, String.valueOf(rs.getDouble("revenue")) });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Get nearest N dates with revenue around target date (by proximity), returns list of ["yyyy-MM-dd", revenue]
+     */
+    public List<String[]> getNearestDaysRevenue(java.sql.Date targetDate, int n) {
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT d, revenue FROM (SELECT DATE(created_at) d, SUM(total_amount) revenue FROM invoice GROUP BY DATE(created_at)) t ORDER BY ABS(DATEDIFF(d, ?)) LIMIT ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, targetDate);
+            ps.setInt(2, n);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new String[] { rs.getDate("d").toString(), String.valueOf(rs.getDouble("revenue")) });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        // sort by date ascending
+        list.sort((a,b) -> java.sql.Date.valueOf(a[0]).compareTo(java.sql.Date.valueOf(b[0])));
         return list;
     }
 

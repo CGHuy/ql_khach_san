@@ -35,6 +35,18 @@ public class StatisticService {
         return statisticDAO.getAllStatistics();
     }
 
+    public List<Statistic> getStatisticsByPeriod(String period) {
+        return statisticDAO.getStatisticsByPeriod(period);
+    }
+
+    public java.util.List<String[]> getDailyRevenueForMonth(int year, int month) {
+        return statisticDAO.getDailyRevenueForMonth(year, month);
+    }
+
+    public java.util.List<String[]> getMonthlyRevenueForYear(int year) {
+        return statisticDAO.getMonthlyRevenueForYear(year);
+    }
+
     public Statistic generateStatisticByDate(java.sql.Date date) {
         Statistic statistic = new Statistic();
         statistic.setStatDate(new java.util.Date(date.getTime()));
@@ -184,5 +196,62 @@ public class StatisticService {
             ex.printStackTrace();
         }
         return statistic;
+    }
+
+    // Check existence by date/period
+    public boolean existsStatistic(java.sql.Date date, String period) {
+        return statisticDAO.existsStatistic(date, period);
+    }
+
+    /**
+     * Save statistic with optional overwrite if exists
+     * @param stat statistic to save
+     * @param overwrite if true, update existing record
+     * @return true if inserted/updated
+     */
+    public boolean saveStatistic(Statistic stat, boolean overwrite) {
+        // Convert stat_date to sql.Date if necessary
+        java.sql.Date sqlDate = new java.sql.Date(stat.getStatDate().getTime());
+        String period = stat.getStatPeriod();
+        if (existsStatistic(sqlDate, period)) {
+            if (!overwrite) return false;
+            Statistic existing = statisticDAO.getStatisticByDateAndPeriod(sqlDate, period);
+            if (existing != null) {
+                stat.setStatisticId(existing.getStatisticId());
+                return statisticDAO.updateStatistic(stat);
+            }
+            return false;
+        } else {
+            return statisticDAO.insertStatistic(stat);
+        }
+    }
+
+    /**
+     * Get nearest N days with revenue around a target date (for comparison charts)
+     */
+    public java.util.List<String[]> getNearestDaysRevenue(java.sql.Date targetDate, int n) {
+        return statisticDAO.getNearestDaysRevenue(targetDate, n);
+    }
+
+    /**
+     * Compute daily statistics for a range ending at endDate for 'days' days (inclusive)
+     */
+    public java.util.List<Statistic> computeDailyStats(java.sql.Date endDate, int days) {
+        java.util.List<Statistic> list = new java.util.ArrayList<>();
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTime(endDate);
+        // iterate backward to produce ascending-order list
+        for (int i = days - 1; i >= 0; i--) {
+            java.util.Calendar c = (java.util.Calendar) cal.clone();
+            c.add(java.util.Calendar.DATE, -i);
+            java.sql.Date d = new java.sql.Date(c.getTimeInMillis());
+            Statistic s = generateStatisticByDate(d);
+            if (s != null) {
+                // ensure statDate set properly
+                s.setStatDate(new java.util.Date(d.getTime()));
+                list.add(s);
+            }
+        }
+        return list;
     }
 }

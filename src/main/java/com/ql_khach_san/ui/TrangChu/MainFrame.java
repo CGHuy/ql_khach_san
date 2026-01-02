@@ -121,13 +121,18 @@ public class MainFrame extends JFrame {
             // Thêm sự kiện cho nút Thống Kê
             if (item.equals("📈 Thống Kê")) {
                 button.addActionListener(e -> {
-                    JFrame frame = new JFrame("Thống Kê Khách Sạn");
-                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                    frame.setSize(900, 600);
-                    frame.setLocationRelativeTo(null);
-                    frame.setLayout(new BorderLayout());
-                    frame.add(new com.ql_khach_san.ui.ThongKe.StatisticPanel(), BorderLayout.CENTER);
-                    frame.setVisible(true);
+                    try {
+                        JFrame frame = new JFrame("Thống Kê Khách Sạn");
+                        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        frame.setSize(900, 600);
+                        frame.setLocationRelativeTo(null);
+                        frame.setLayout(new BorderLayout());
+                        frame.add(new com.ql_khach_san.ui.ThongKe.StatisticPanel(), BorderLayout.CENTER);
+                        frame.setVisible(true);
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "Không thể mở cửa sổ Thống Kê:\n" + t.toString(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
                 });
             }
 
