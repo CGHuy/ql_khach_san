@@ -22,7 +22,7 @@ public class MonthStatisticFrame extends JFrame {
 
     public MonthStatisticFrame() {
         setTitle("Thống kê theo tháng");
-        setSize(900,600);
+        setSize(1200, 800); // Kích thước giống StatisticPanel
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -41,6 +41,7 @@ public class MonthStatisticFrame extends JFrame {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm", "Tháng", "Doanh thu", dataset);
         chartPanel = new ChartPanel(chart);
+        chartPanel.setPreferredSize(new Dimension(1150, 450)); // Kích thước giống StatisticPanel
         add(chartPanel, BorderLayout.CENTER);
 
         tableModel = new DefaultTableModel(new String[]{"Tháng","Doanh thu"},0);
