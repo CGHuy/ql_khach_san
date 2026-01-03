@@ -1,3 +1,4 @@
+
 package com.ql_khach_san.service;
 
 import com.ql_khach_san.dao.StatisticDAO;
@@ -9,6 +10,81 @@ import java.util.List;
  * Statistic business logic moved to service package
  */
 public class StatisticService {
+        /**
+         * Lấy thống kê số lượng từng loại phòng được sử dụng trong năm
+         */
+        public java.util.List<Object[]> getRoomTypeUsageForYear(int year) {
+            java.util.List<Object[]> list = new java.util.ArrayList<>();
+            String sql = "SELECT rt.type_name, COUNT(*) as count " +
+                         "FROM checkin ci " +
+                         "JOIN reservation r ON ci.reservation_id = r.reservation_id " +
+                         "JOIN room rm ON r.room_id = rm.room_id " +
+                         "JOIN room_type rt ON rm.type_id = rt.type_id " +
+                         "WHERE YEAR(ci.checkin_time) = ? " +
+                         "GROUP BY rt.type_name";
+            try (java.sql.Connection conn = com.ql_khach_san.config.DBConnection.getConnection();
+                 java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, year);
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(new Object[]{rs.getString("type_name"), rs.getInt("count")});
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            return list;
+        }
+
+        /**
+         * Lấy thống kê số lượng từng dịch vụ được sử dụng trong năm
+         */
+        public java.util.List<Object[]> getServiceUsageForYear(int year) {
+            java.util.List<Object[]> list = new java.util.ArrayList<>();
+            String sql = "SELECT s.service_name, SUM(su.quantity) as count " +
+                         "FROM service_usage su " +
+                         "JOIN service s ON su.service_id = s.service_id " +
+                         "WHERE YEAR(su.created_at) = ? " +
+                         "GROUP BY s.service_name";
+            try (java.sql.Connection conn = com.ql_khach_san.config.DBConnection.getConnection();
+                 java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, year);
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(new Object[]{rs.getString("service_name"), rs.getInt("count")});
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            return list;
+        }
+
+    /**
+     * Lấy thống kê số lượng từng loại phòng được đặt (reservation) trong năm
+     */
+    public java.util.List<Object[]> getRoomTypeBookedForYear(int year) {
+        java.util.List<Object[]> list = new java.util.ArrayList<>();
+        String sql = "SELECT rt.type_name, COUNT(*) as count " +
+                     "FROM reservation r " +
+                     "JOIN room rm ON r.room_id = rm.room_id " +
+                     "JOIN room_type rt ON rm.type_id = rt.type_id " +
+                     "WHERE YEAR(r.booking_date) = ? " +
+                     "GROUP BY rt.type_name";
+        try (java.sql.Connection conn = com.ql_khach_san.config.DBConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{rs.getString("type_name"), rs.getInt("count")});
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
     private StatisticDAO statisticDAO;
 
     public StatisticService() {
