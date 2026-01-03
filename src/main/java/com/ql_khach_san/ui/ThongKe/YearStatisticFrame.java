@@ -5,11 +5,15 @@ import com.ql_khach_san.model.Statistic;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 public class YearStatisticFrame extends JFrame {
@@ -113,21 +117,32 @@ public class YearStatisticFrame extends JFrame {
         tableModel.setRowCount(0);
         // change table to columns: ID, Date, Revenue, Note
         tableModel.setColumnIdentifiers(new String[]{"ID", "Ngày", "Doanh thu", "Ghi chú"});
+        DecimalFormat df = new DecimalFormat("#,##0");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         for (com.ql_khach_san.model.Statistic s : list) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTime(s.getStatDate());
             int y = cal.get(java.util.Calendar.YEAR);
             if (y == year) {
-                tableModel.addRow(new Object[]{s.getStatisticId(), s.getStatDate(), s.getRevenue(), s.getNote()});
+                String dateStr = sdf.format(s.getStatDate());
+                String revStr = df.format(s.getRevenue());
+                tableModel.addRow(new Object[]{s.getStatisticId(), dateStr, revStr, s.getNote()});
             }
         }
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             String label = tableModel.getValueAt(i, 1).toString();
-            double val = Double.parseDouble(tableModel.getValueAt(i, 3).toString());
+            String revStr = tableModel.getValueAt(i, 2).toString();
+            double val = 0.0;
+            try { val = Double.parseDouble(revStr.replaceAll("[^0-9.-]", "")); } catch (Exception ex) { val = 0.0; }
             dataset.addValue(val, "Doanh thu", label);
         }
         JFreeChart chart = ChartFactory.createBarChart("Thống kê đã lưu - năm " + year, "Ngày", "Doanh thu", dataset);
+        try {
+            CategoryPlot plot = chart.getCategoryPlot();
+            NumberAxis range = (NumberAxis) plot.getRangeAxis();
+            range.setNumberFormatOverride(new DecimalFormat("#,##0"));
+        } catch (Exception ex) {}
         chartPanel.setChart(chart);
     }
 }

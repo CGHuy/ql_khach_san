@@ -7,10 +7,13 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 import java.util.Comparator;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 public class StatisticPanel extends JPanel {
@@ -51,7 +54,7 @@ public class StatisticPanel extends JPanel {
 
         // Day picker
         spinnerDate = new JSpinner(new SpinnerDateModel());
-        spinnerDate.setEditor(new JSpinner.DateEditor(spinnerDate, "yyyy-MM-dd"));
+        spinnerDate.setEditor(new JSpinner.DateEditor(spinnerDate, "dd-MM-yyyy"));
         header.add(new JLabel("Ngày:")); header.add(spinnerDate);
 
         // Buttons to open Month/Year dialogs
@@ -187,10 +190,10 @@ public class StatisticPanel extends JPanel {
         tableModel.setRowCount(0);
         for (Statistic s : list) {
             tableModel.addRow(new Object[]{
-                s.getStatDate(),
-                s.getRevenue(),
-                s.getRoomRevenue(),
-                s.getServiceRevenue(),
+                formatDate(s.getStatDate()),
+                formatMoney(s.getRevenue()),
+                formatMoney(s.getRoomRevenue()),
+                formatMoney(s.getServiceRevenue()),
                 s.getCustomerCount(),
                 s.getRoomRentedCount()
             });
@@ -219,8 +222,13 @@ public class StatisticPanel extends JPanel {
         String[] cols = new String[] {"Ngày", "Doanh thu"};
         tableModel.setColumnIdentifiers(cols);
         tableModel.setRowCount(0);
+        SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
         for (String[] r : data) {
-            tableModel.addRow(new Object[] { r[0], Double.parseDouble(r[1]) });
+            String label = r[0];
+            try { label = sdfOut.format(sdfIn.parse(r[0])); } catch (Exception ex) { }
+            double val = 0.0; try { val = Double.parseDouble(r[1]); } catch (Exception ex) { }
+            tableModel.addRow(new Object[] { label, formatMoney(val) });
         }
         updateChartForComparison(data);
     }
@@ -228,8 +236,11 @@ public class StatisticPanel extends JPanel {
     private void updateChartForComparison(java.util.List<String[]> data) {
         if (chartPanel == null) return;
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
         for (String[] r : data) {
             String label = r[0];
+            try { label = sdfOut.format(sdfIn.parse(r[0])); } catch (Exception ex) { }
             double rev = 0.0;
             try { rev = Double.parseDouble(r[1]); } catch (Exception ex) { rev = 0.0; }
             dataset.addValue(rev, "Doanh thu", label);
@@ -237,6 +248,11 @@ public class StatisticPanel extends JPanel {
         JFreeChart chart;
         if (chartIsBar) chart = ChartFactory.createBarChart("So sánh doanh thu quanh ngày", "Ngày", "Doanh thu", dataset);
         else chart = ChartFactory.createLineChart("So sánh doanh thu quanh ngày", "Ngày", "Doanh thu", dataset);
+        try {
+            CategoryPlot plot = chart.getCategoryPlot();
+            NumberAxis range = (NumberAxis) plot.getRangeAxis();
+            range.setNumberFormatOverride(new DecimalFormat("#,##0"));
+        } catch (Exception ex) {}
         chartPanel.setChart(chart);
     }
 
@@ -250,7 +266,15 @@ public class StatisticPanel extends JPanel {
         }
     }
 
-    // Compute statistics for the given date and display comparison (no saving)
+    private String formatDate(java.util.Date d) {
+        if (d == null) return "";
+        try { return new SimpleDateFormat("dd-MM-yyyy").format(d); } catch (Exception ex) { return d.toString(); }
+    }
+
+    private String formatMoney(double v) {
+        try { return new DecimalFormat("#,##0").format(v); } catch (Exception ex) { return String.valueOf(v); }
+    }
+
     private void computeForDate(java.util.Date d) {
         if (d == null) return;
         java.sql.Date sqlDate = new java.sql.Date(d.getTime());
@@ -271,6 +295,7 @@ public class StatisticPanel extends JPanel {
         nearby.sort((a,b) -> java.sql.Date.valueOf(a[0]).compareTo(java.sql.Date.valueOf(b[0])));
         displayDailyRevenueComparison(nearby);
     }
+
     private void initChart() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         JFreeChart chart = ChartFactory.createBarChart(
@@ -306,10 +331,13 @@ public class StatisticPanel extends JPanel {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         // sắp xếp theo ngày tăng dần để biểu đồ dễ đọc
         list.sort(Comparator.comparing(Statistic::getStatDate));
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
         for (Statistic s : list) {
+            String dateLabel = sdfIn.format(s.getStatDate());
+            try { dateLabel = sdfOut.format(s.getStatDate()); } catch (Exception ex) {}
             String label = (s.getStatPeriod() != null && !s.getStatPeriod().isEmpty() && !s.getStatPeriod().equals("day"))
-                    ? sdf.format(s.getStatDate()) + " (" + s.getStatPeriod() + ")" : sdf.format(s.getStatDate());
+                    ? dateLabel + " (" + s.getStatPeriod() + ")" : dateLabel;
             dataset.addValue(s.getRevenue(), "Doanh thu", label);
         }
         JFreeChart chart;
@@ -318,6 +346,11 @@ public class StatisticPanel extends JPanel {
         } else {
             chart = ChartFactory.createLineChart("Doanh thu", "Thời gian", "Doanh thu", dataset);
         }
+        try {
+            CategoryPlot plot = chart.getCategoryPlot();
+            NumberAxis range = (NumberAxis) plot.getRangeAxis();
+            range.setNumberFormatOverride(new DecimalFormat("#,##0"));
+        } catch (Exception ex) {}
         chartPanel.setChart(chart);
     }
 

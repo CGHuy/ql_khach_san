@@ -5,11 +5,14 @@ import com.ql_khach_san.model.Statistic;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.List;
 
 public class MonthStatisticFrame extends JFrame {
@@ -29,11 +32,8 @@ public class MonthStatisticFrame extends JFrame {
         for (int y = currentYear; y >= 2000; y--) cbYear.addItem(String.valueOf(y));
         // Only choose year; compare months in the selected year
         JButton btnGen = new JButton("Xem năm");
-        JButton btnSaveAgg = new JButton("Lưu tổng hợp tháng");
-        btnSaveAgg.setEnabled(false);
-        btnSaveAgg.setToolTipText("Lưu đã bị vô hiệu hoá; hệ thống hiển thị dữ liệu động.");
         control.add(new JLabel("Năm:")); control.add(cbYear);
-        control.add(btnGen); control.add(btnSaveAgg);
+        control.add(btnGen);
 
         add(control, BorderLayout.NORTH);
 
@@ -52,24 +52,28 @@ public class MonthStatisticFrame extends JFrame {
             loadForYear(y);
         });
 
-        btnSaveAgg.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Lưu thống kê đã bị vô hiệu hoá; hệ thống chỉ hiển thị dữ liệu động.");
-        });
+
     }
 
     private void loadForYear(int year) {
         java.util.List<String[]> data = service.getMonthlyRevenueForYear(year);
         tableModel.setRowCount(0);
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        DecimalFormat df = new DecimalFormat("#,##0");
         for (String[] row : data) {
             // row[0] formatted as yyyy-MM; show MM label
             String label = row[0].length() >= 7 ? row[0].substring(5) : row[0];
             double val = 0.0;
             try { val = Double.parseDouble(row[1]); } catch (Exception ex) { val = 0.0; }
-            tableModel.addRow(new Object[]{label, val});
+            tableModel.addRow(new Object[]{label, df.format(val)});
             dataset.addValue(val, "Doanh thu", label);
         }
         JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm " + year, "Tháng", "Doanh thu", dataset);
+        try {
+            CategoryPlot plot = chart.getCategoryPlot();
+            NumberAxis range = (NumberAxis) plot.getRangeAxis();
+            range.setNumberFormatOverride(new DecimalFormat("#,##0"));
+        } catch (Exception ex) {}
         chartPanel.setChart(chart);
     }
 }
