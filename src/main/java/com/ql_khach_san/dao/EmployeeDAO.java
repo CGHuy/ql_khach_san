@@ -9,73 +9,111 @@ import java.util.List;
 
 public class EmployeeDAO {
 
-    public Employee findByUsername(String username) {
-        String sql = "SELECT employee_id, username, password, full_name, role FROM employee WHERE username = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return new Employee(rs.getInt("employee_id"), rs.getString("username"), rs.getString("password"), rs.getString("full_name"), rs.getString("role"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    public List<Employee> getAll() {
+        List<Employee> list = new ArrayList<>();
+        String sql = "SELECT * FROM employee ORDER BY employee_id";
 
-    public Employee getById(int id) {
-        String sql = "SELECT employee_id, username, password, full_name, role FROM employee WHERE employee_id = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return new Employee(rs.getInt("employee_id"), rs.getString("username"), rs.getString("password"), rs.getString("full_name"), rs.getString("role"));
+        try (Connection con = DBConnection.getConnection();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+
+            while (rs.next()) {
+                list.add(new Employee(
+                        rs.getInt("employee_id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("full_name"),
+                        rs.getString("role")
+                ));
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return list;
     }
 
     public boolean insert(Employee e) {
-        String sql = "INSERT INTO employee(username, password, full_name, role) VALUES(?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String sql = "INSERT INTO employee(username,password,full_name,role) VALUES(?,?,?,?)";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, e.getUsername());
             ps.setString(2, e.getPassword());
             ps.setString(3, e.getFullName());
             ps.setString(4, e.getRole());
-            int affected = ps.executeUpdate();
-            if (affected > 0) {
-                try (ResultSet keys = ps.getGeneratedKeys()) { if (keys.next()) e.setEmployeeId(keys.getInt(1)); }
-                return true;
-            }
-        } catch (SQLException ex) {
+
+            return ps.executeUpdate() > 0;
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return false;
     }
 
-    public boolean update(Employee e) {
-        String sql = "UPDATE employee SET username = ?, password = ?, full_name = ?, role = ? WHERE employee_id = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+    public boolean update(Employee e, boolean updatePassword) {
+        String sql = updatePassword
+                ? "UPDATE employee SET username=?, password=?, full_name=?, role=? WHERE employee_id=?"
+                : "UPDATE employee SET username=?, full_name=?, role=? WHERE employee_id=?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, e.getUsername());
-            ps.setString(2, e.getPassword());
-            ps.setString(3, e.getFullName());
-            ps.setString(4, e.getRole());
-            ps.setInt(5, e.getEmployeeId());
+
+            if (updatePassword) {
+                ps.setString(2, e.getPassword());
+                ps.setString(3, e.getFullName());
+                ps.setString(4, e.getRole());
+                ps.setInt(5, e.getEmployeeId());
+            } else {
+                ps.setString(2, e.getFullName());
+                ps.setString(3, e.getRole());
+                ps.setInt(4, e.getEmployeeId());
+            }
+
             return ps.executeUpdate() > 0;
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return false;
     }
 
     public boolean delete(int id) {
-        String sql = "DELETE FROM employee WHERE employee_id = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        String sql = "DELETE FROM employee WHERE employee_id=?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return false;
+return false;
+    }
+
+    public List<Employee> searchByName(String keyword) {
+        List<Employee> list = new ArrayList<>();
+        String sql = "SELECT * FROM employee WHERE LOWER(full_name) LIKE ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword.toLowerCase() + "%");
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(new Employee(
+                        rs.getInt("employee_id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("full_name"),
+                        rs.getString("role")
+                ));
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
     }
 }
