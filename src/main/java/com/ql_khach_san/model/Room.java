@@ -4,15 +4,19 @@ public class Room {
     private int roomId;
     private String roomNumber;
     private int typeId;
+    private int floorId;
     private String status;
+    private String note;
     
     public Room() {}
 
-    public Room(int roomId, String roomNumber, int typeId, String status) {
+    public Room(int roomId, String roomNumber, int typeId, int floorId, String status, String note) {
         this.roomId = roomId;
         this.roomNumber = roomNumber;
         this.typeId = typeId;
+        this.floorId = floorId;
         this.status = status;
+        this.note = note;
     }
 
     public int getRoomId() {
@@ -27,8 +31,16 @@ public class Room {
         return typeId;
     }
 
+    public int getFloorId() {
+        return floorId;
+    }
+
     public String getStatus() {
         return status;
+    }
+
+    public String getNote() {
+        return note;
     }
 
     public void setRoomId(int roomId) {
@@ -41,6 +53,14 @@ public class Room {
 
     public void setTypeId(int typeId) {
         this.typeId = typeId;
+    }
+
+    public void setFloorId(int floorId) {
+        this.floorId = floorId;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public void setStatus(String status) {

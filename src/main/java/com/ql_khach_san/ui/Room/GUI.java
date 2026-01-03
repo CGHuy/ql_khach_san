@@ -10,6 +10,8 @@ import com.ql_khach_san.model.Room;
 import com.ql_khach_san.model.RoomType;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -19,6 +21,8 @@ import java.util.List;
 public class GUI extends JFrame {
 
 	private JTextField txtRoomNumber;
+	private JTextField txtSearch;
+	private JTextArea txtNote;
 	private JComboBox<String> cmbPrefix;
 	private JComboBox<String> cmbFloor;
 	private JComboBox<String> cmbRoomType;
@@ -43,16 +47,29 @@ public class GUI extends JFrame {
 	}
 
 	private void initComponents() {
+		// set overall background color similar to mock
+		Color bg = new Color(224, 236, 243);
 		JPanel left = new JPanel();
+		left.setBackground(bg);
 		left.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
-		c.insets = new Insets(8, 12, 8, 12);
+		c.insets = new Insets(12, 14, 12, 14);
 		c.fill = GridBagConstraints.HORIZONTAL;
 
 		JLabel lblTitle = new JLabel("Quản Lý Phòng");
 		lblTitle.setFont(lblTitle.getFont().deriveFont(Font.BOLD, 18f));
 		JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		titlePanel.setBackground(bg);
 		titlePanel.add(lblTitle);
+
+		// Search panel on top
+		JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+		searchPanel.setBackground(bg);
+		JLabel lblSearch = new JLabel("Tìm kiếm:"); lblSearch.setForeground(Color.DARK_GRAY);
+		txtSearch = new JTextField(28);
+		txtSearch.setToolTipText("Nhập tên hoặc mã phòng...");
+		searchPanel.add(lblSearch);
+		searchPanel.add(txtSearch);
 
 		c.gridx = 0; c.gridy = 0; left.add(new JLabel("Phòng"), c);
 		c.gridx = 1; txtRoomNumber = new JTextField(12); left.add(txtRoomNumber, c);
@@ -70,7 +87,7 @@ public class GUI extends JFrame {
 		c.gridx = 1; cmbStatus = new JComboBox<>(new String[]{"Trống","Đã có người ở"}); left.add(cmbStatus, c);
 
 		c.gridx = 0; c.gridy = 5; left.add(new JLabel("Ghi Chú"), c);
-		c.gridx = 1; JTextArea txtNote = new JTextArea(6, 16); JScrollPane noteScroll = new JScrollPane(txtNote); left.add(noteScroll, c);
+		c.gridx = 1; txtNote = new JTextArea(6, 16); JScrollPane noteScroll = new JScrollPane(txtNote); left.add(noteScroll, c);
 
 		c.gridx = 0; c.gridy = 6; chkMany = new JCheckBox("Thêm Nhiều"); left.add(chkMany, c);
 
@@ -81,12 +98,22 @@ public class GUI extends JFrame {
 		btnNew = new JButton("Mới");
 		buttons.add(btnAdd); buttons.add(btnEdit); buttons.add(btnDelete); buttons.add(btnNew);
 
-		// Table on right
-		tableModel = new DefaultTableModel(new Object[]{"Phòng","Loại Phòng","Giá Theo Giờ","Giá Theo Ngày","Trạng Thái","Ghi Chú"},0) {
+		// Table on right (add column "Tầng" after Phòng)
+		tableModel = new DefaultTableModel(new Object[]{"Phòng","Tầng","Loại Phòng","Giá","Trạng Thái","Ghi Chú"},0) {
 			public boolean isCellEditable(int row, int column) { return false; }
 		};
 		table = new JTable(tableModel);
 		JScrollPane tableScroll = new JScrollPane(table);
+		tableScroll.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
+		table.setRowHeight(26);
+		table.getTableHeader().setReorderingAllowed(false);
+		if (table.getColumnModel().getColumnCount() >= 5) {
+			table.getColumnModel().getColumn(0).setPreferredWidth(90);
+			table.getColumnModel().getColumn(1).setPreferredWidth(220);
+			table.getColumnModel().getColumn(2).setPreferredWidth(120);
+			table.getColumnModel().getColumn(3).setPreferredWidth(120);
+			table.getColumnModel().getColumn(4).setPreferredWidth(260);
+		}
 
 		// layout main
 		JPanel formPanel = new JPanel(new BorderLayout());
@@ -94,7 +121,9 @@ public class GUI extends JFrame {
 		formPanel.add(left, BorderLayout.CENTER);
 		formPanel.add(buttons, BorderLayout.SOUTH);
 
-		getContentPane().setLayout(new BorderLayout(8,8));
+		getContentPane().setLayout(new BorderLayout(10,10));
+		try { ((JComponent)getContentPane()).setBorder(BorderFactory.createEmptyBorder(12,12,12,12)); } catch (Exception ex) {}
+		getContentPane().add(searchPanel, BorderLayout.NORTH);
 		getContentPane().add(formPanel, BorderLayout.WEST);
 		getContentPane().add(tableScroll, BorderLayout.CENTER);
 
@@ -102,8 +131,17 @@ public class GUI extends JFrame {
 		loadRoomTypes();
 		loadTable();
 
+		// search & sort listeners
+		txtSearch.getDocument().addDocumentListener(new DocumentListener() {
+			public void insertUpdate(DocumentEvent e) { loadTable(); }
+			public void removeUpdate(DocumentEvent e) { loadTable(); }
+			public void changedUpdate(DocumentEvent e) { loadTable(); }
+		});
+
+
+
 		// listeners
-		btnAdd.addActionListener(e -> onAdd(txtNote));
+		btnAdd.addActionListener(e -> onAdd());
 		btnEdit.addActionListener(this::onEdit);
 		btnDelete.addActionListener(this::onDelete);
 		btnNew.addActionListener(e -> clearForm());
@@ -117,7 +155,10 @@ public class GUI extends JFrame {
 					// select type
 					int typeId = sel.getTypeId();
 					for (int i=0;i<typeList.size();i++) if (typeList.get(i).getTypeId()==typeId) { cmbRoomType.setSelectedIndex(i); break; }
-					cmbStatus.setSelectedItem(sel.getStatus());
+							cmbStatus.setSelectedItem(sel.getStatus());
+							// set floor selection (assume floor ids are 1-based)
+							if (sel.getFloorId() > 0 && sel.getFloorId() - 1 < cmbFloor.getItemCount()) cmbFloor.setSelectedIndex(sel.getFloorId() - 1);
+							txtNote.setText(sel.getNote() == null ? "" : sel.getNote());
 				}
 			}
 		});
@@ -136,22 +177,29 @@ public class GUI extends JFrame {
 	private void loadTable() {
 		tableModel.setRowCount(0);
 		roomList = roomDao.getAll();
+		String q = txtSearch == null ? "" : txtSearch.getText().trim().toLowerCase();
 		for (Room r : roomList) {
 			RoomType rt = typeDao.getById(r.getTypeId());
 			String typeName = rt == null ? "" : rt.getTypeName();
-			Object priceHour = rt == null ? "" : rt.getPrice();
-			Object priceDay = rt == null ? "" : rt.getDescription();
-			tableModel.addRow(new Object[]{r.getRoomNumber(), typeName, priceHour, priceDay, r.getStatus(), ""});
+			Object price = rt == null ? "" : rt.getPrice();
+			Object note = r.getNote() == null ? "" : r.getNote();
+			String floor = r.getFloorId() > 0 ? ("Tầng " + r.getFloorId()) : "";
+			String combined = (r.getRoomNumber() + " " + typeName + " " + floor).toLowerCase();
+			if (!q.isEmpty() && !combined.contains(q)) continue;
+			tableModel.addRow(new Object[]{r.getRoomNumber(), floor, typeName, price, r.getStatus(), note});
 		}
 	}
 
-	private void onAdd(JTextArea txtNote) {
+    private void onAdd() {
 		try {
 			Room r = new Room();
 			r.setRoomNumber(txtRoomNumber.getText().trim());
 			int idx = cmbRoomType.getSelectedIndex();
 			if (idx >= 0) r.setTypeId(typeList.get(idx).getTypeId());
+			// floor selection -> floorId (assuming floors are 1-based in DB)
+			r.setFloorId(cmbFloor.getSelectedIndex() + 1);
 			r.setStatus((String) cmbStatus.getSelectedItem());
+			r.setNote(txtNote.getText().trim());
 			if (roomDao.insert(r)) {
 				JOptionPane.showMessageDialog(this, "Thêm thành công");
 				loadTable();
@@ -171,7 +219,9 @@ public class GUI extends JFrame {
 			rr.setRoomNumber(txtRoomNumber.getText().trim());
 			int idx = cmbRoomType.getSelectedIndex();
 			if (idx >= 0) rr.setTypeId(typeList.get(idx).getTypeId());
+			rr.setFloorId(cmbFloor.getSelectedIndex() + 1);
 			rr.setStatus((String) cmbStatus.getSelectedItem());
+			rr.setNote(txtNote.getText().trim());
 			if (roomDao.update(rr)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công"); loadTable(); }
 			else JOptionPane.showMessageDialog(this, "Cập nhật thất bại");
 		} catch (Exception ex) { JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage()); }
@@ -193,6 +243,7 @@ public class GUI extends JFrame {
 		cmbFloor.setSelectedIndex(0);
 		if (cmbRoomType.getItemCount()>0) cmbRoomType.setSelectedIndex(0);
 		cmbStatus.setSelectedIndex(0);
+		txtNote.setText("");
 	}
 
 	public static void main(String[] args) {
