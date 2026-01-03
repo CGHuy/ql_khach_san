@@ -113,8 +113,7 @@ public class RoomDAO {
     public int getActiveReservationId(int roomId) {
         String sql = "SELECT reservation_id FROM reservation WHERE room_id = ? AND status = 'Đã đặt' LIMIT 1";
         try (Connection conn = DBConnection.getConnection(); 
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+            PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, roomId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {

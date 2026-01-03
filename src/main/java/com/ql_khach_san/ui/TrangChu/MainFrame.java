@@ -214,7 +214,7 @@ public class MainFrame extends JFrame {
             // Đặt phòng
             JMenuItem itemDatPhong = new JMenuItem("Đặt phòng");
             itemDatPhong.addActionListener(e -> {
-                new DialogDatPhong(this, v.getRoomNumber()).setVisible(true);
+                new DialogDatPhong(this, v).setVisible(true);
             });
             menu.add(itemDatPhong);
             

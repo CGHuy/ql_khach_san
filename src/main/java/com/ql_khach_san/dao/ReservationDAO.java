@@ -83,4 +83,55 @@ public class ReservationDAO {
         }
         return false;
     }
+    
+    public boolean createReservationTransaction(Reservation res) {
+        Connection conn = null;
+        PreparedStatement psRes = null;
+        PreparedStatement psRoom = null;
+
+        try {
+            conn = com.ql_khach_san.config.DBConnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu giao dịch (Transaction)
+
+            // 1. Thêm vào bảng reservation
+            String sqlRes = "INSERT INTO reservation(customer_id, room_id, booking_date, checkin_date, checkout_date, status) VALUES(?, ?, ?, ?, ?, ?)";
+            psRes = conn.prepareStatement(sqlRes, Statement.RETURN_GENERATED_KEYS);
+            psRes.setInt(1, res.getCustomerId());
+            psRes.setInt(2, res.getRoomId());
+            psRes.setTimestamp(3, res.getBookingDate() != null ? Timestamp.valueOf(res.getBookingDate()) : Timestamp.valueOf(LocalDateTime.now()));
+            psRes.setTimestamp(4, res.getCheckinDate() != null ? Timestamp.valueOf(res.getCheckinDate()) : null);
+            psRes.setTimestamp(5, res.getCheckoutDate() != null ? Timestamp.valueOf(res.getCheckoutDate()) : null);
+            psRes.setString(6, "Đã đặt");
+
+            int affected = psRes.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet keys = psRes.getGeneratedKeys()) {
+                    if (keys.next()) res.setReservationId(keys.getInt(1));
+                }
+            }
+
+            // 2. Cập nhật trạng thái phòng trong bảng room sang 'Đã đặt'
+            String sqlRoom = "UPDATE room SET status = 'Đã đặt' WHERE room_id = ?";
+            psRoom = conn.prepareStatement(sqlRoom);
+            psRoom.setInt(1, res.getRoomId());
+            psRoom.executeUpdate();
+
+            conn.commit(); // Hoàn tất, lưu mọi thay đổi
+            return true;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Đóng các tài nguyên
+            try {
+                if (psRes != null) psRes.close();
+                if (psRoom != null) psRoom.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) { e.printStackTrace(); }
+        }
+    }
 }

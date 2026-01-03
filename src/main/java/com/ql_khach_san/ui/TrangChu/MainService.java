@@ -37,8 +37,8 @@ public class MainService {
             // 1. Mặc định reservationId là 0 (hoặc -1) nếu phòng không phải 'Đã đặt'
             int resId = 0; 
 
-            // 2. Nếu trạng thái là "Đã đặt", đi lấy ID đơn đặt từ Database
-            if (r.getStatus() != null && r.getStatus().equalsIgnoreCase("Đã đặt")) {
+            // 2. Nếu trạng thái là "Đã đặt" hoặc "Đã thuê", đi lấy ID đơn đặt từ Database
+            if ("Đã đặt".equalsIgnoreCase(r.getStatus()) || "Đã thuê".equalsIgnoreCase(r.getStatus())) {
                 resId = roomDAO.getActiveReservationId(r.getRoomId());
             }
 
