@@ -109,4 +109,66 @@ public class RoomDAO {
         }
         return false;
     }
+    
+    public int getActiveReservationId(int roomId) {
+        String sql = "SELECT reservation_id FROM reservation WHERE room_id = ? AND status = 'Đã đặt' LIMIT 1";
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, roomId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("reservation_id");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0; // Trả về 0 nếu không tìm thấy đơn nào đang chờ
+    }
+    
+    public boolean cancelReservationTransaction(int roomId, int reservationId) {
+        Connection conn = null;
+        PreparedStatement psRoom = null;
+        PreparedStatement psRes = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu Transaction
+
+            String sqlRoom = "UPDATE room SET status = 'Trống' WHERE room_id = ?";
+            psRoom = conn.prepareStatement(sqlRoom);
+            psRoom.setInt(1, roomId);
+            psRoom.executeUpdate();
+
+            String sqlRes = "UPDATE reservation SET status = 'Đã hủy' WHERE reservation_id = ?";
+            psRes = conn.prepareStatement(sqlRes);
+            psRes.setInt(1, reservationId);
+            psRes.executeUpdate();
+
+            conn.commit(); // Lưu thay đổi vào Database
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); // Quay xe nếu có bất kỳ lỗi nào xảy ra
+                    System.out.println("Transaction rolled back!");
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
+            try {
+                if (psRoom != null) psRoom.close();
+                if (psRes != null) psRes.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
