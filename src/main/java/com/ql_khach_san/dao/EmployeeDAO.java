@@ -4,8 +4,7 @@ import com.ql_khach_san.config.DBConnection;
 import com.ql_khach_san.model.Employee;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+
 
 public class EmployeeDAO {
 

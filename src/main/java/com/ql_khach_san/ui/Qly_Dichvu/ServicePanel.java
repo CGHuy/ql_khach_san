@@ -301,19 +301,4 @@ public class ServicePanel extends JPanel {
         txtName.setText("");
         txtPrice.setText("");
     }
-
-    // quick demo
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JFrame f = new JFrame("Quản lý Dịch vụ");
-                f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                f.setSize(900, 500);
-                f.setLocationRelativeTo(null);
-                f.setContentPane(new ServicePanel());
-                f.setVisible(true);
-            }
-        });
-    }
 }
