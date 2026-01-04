@@ -20,14 +20,14 @@ import java.util.Calendar;
 public class YearStatisticFrame extends JFrame {
     private StatisticService service = new StatisticService();
     private ChartPanel chartPanel;
-    private ChartPanel pieRoomPanel;
+    private JPanel kpiPanel; // KPI tiles (Booked / Used / Delta)
+    private JLabel lblBooked, lblUsed, lblDelta;
     private ChartPanel pieServicePanel;
     private ChartPanel pieRoomBookedPanel;
     private DefaultTableModel tableModel;
     
     // Cache datasets to avoid recreation
     private DefaultCategoryDataset revenueDataset;
-    private DefaultPieDataset pieRoomDataset;
     private DefaultPieDataset pieRoomBookedDataset;
     private DefaultPieDataset pieServiceDataset;
 
@@ -51,7 +51,7 @@ public class YearStatisticFrame extends JFrame {
 
         // Initialize datasets once
         revenueDataset = new DefaultCategoryDataset();
-        pieRoomDataset = new DefaultPieDataset();
+        // roomUsageDataset initialized below (bar chart)
         pieRoomBookedDataset = new DefaultPieDataset();
         pieServiceDataset = new DefaultPieDataset();
 
@@ -61,16 +61,14 @@ public class YearStatisticFrame extends JFrame {
         chartPanel.setPreferredSize(new Dimension(575, 190));
         formatChart(chartPanel);
 
-        // Pie chart for room types
-        JFreeChart pieRoomChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false);
-        pieRoomPanel = new ChartPanel(pieRoomChart);
-        pieRoomPanel.setPreferredSize(new Dimension(575, 190));
+        // KPI panel: Booked / Used / Delta
+        kpiPanel = createKpiPanel();
+        kpiPanel.setPreferredSize(new Dimension(575, 190));
 
-        // Pie chart for room types booked
+        // Pie chart for room types booked (keep as pie)
         JFreeChart pieRoomBookedChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false);
         pieRoomBookedPanel = new ChartPanel(pieRoomBookedChart);
         pieRoomBookedPanel.setPreferredSize(new Dimension(575, 190));
-
         // Pie chart for services
         JFreeChart pieServiceChart = ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false);
         pieServicePanel = new ChartPanel(pieServiceChart);
@@ -79,7 +77,7 @@ public class YearStatisticFrame extends JFrame {
         // Panel to hold all charts in a 2x2 grid
         JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
         chartsPanel.add(chartPanel);
-        chartsPanel.add(pieRoomPanel);
+        chartsPanel.add(kpiPanel);
         chartsPanel.add(pieRoomBookedPanel);
         chartsPanel.add(pieServicePanel);
 
@@ -116,10 +114,43 @@ public class YearStatisticFrame extends JFrame {
         }
     }
 
+    private JPanel createKpiPanel() {
+        JPanel p = new JPanel(new GridLayout(1, 3, 5, 5));
+
+        lblBooked = new JLabel("0", SwingConstants.CENTER);
+        lblBooked.setFont(lblBooked.getFont().deriveFont(16f).deriveFont(Font.BOLD));
+        JLabel descBooked = new JLabel("Đặt (Booked)", SwingConstants.CENTER);
+        JPanel tile1 = new JPanel(new BorderLayout());
+        tile1.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        tile1.add(lblBooked, BorderLayout.CENTER);
+        tile1.add(descBooked, BorderLayout.SOUTH);
+
+        lblUsed = new JLabel("0", SwingConstants.CENTER);
+        lblUsed.setFont(lblUsed.getFont().deriveFont(16f).deriveFont(Font.BOLD));
+        JLabel descUsed = new JLabel("Sử dụng (Used)", SwingConstants.CENTER);
+        JPanel tile2 = new JPanel(new BorderLayout());
+        tile2.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        tile2.add(lblUsed, BorderLayout.CENTER);
+        tile2.add(descUsed, BorderLayout.SOUTH);
+
+        lblDelta = new JLabel("0", SwingConstants.CENTER);
+        lblDelta.setFont(lblDelta.getFont().deriveFont(16f).deriveFont(Font.BOLD));
+        JLabel descDelta = new JLabel("Chênh lệch (Booked - Used)", SwingConstants.CENTER);
+        JPanel tile3 = new JPanel(new BorderLayout());
+        tile3.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        tile3.add(lblDelta, BorderLayout.CENTER);
+        tile3.add(descDelta, BorderLayout.SOUTH);
+
+        p.add(tile1); p.add(tile2); p.add(tile3);
+        return p;
+    }
+
+    private String formatNumber(int n) {
+        try { return new DecimalFormat("#,##0").format(n); } catch (Exception ex) { return String.valueOf(n); }
+    }
     private void loadForYear(int year) {
         // Load all data at once
         revenueDataset.clear();
-        pieRoomDataset.clear();
         pieRoomBookedDataset.clear();
         pieServiceDataset.clear();
         tableModel.setRowCount(0);
@@ -140,29 +171,32 @@ public class YearStatisticFrame extends JFrame {
         chartPanel.setChart(ChartFactory.createBarChart("Doanh thu theo tháng trong năm " + year, "Tháng", "Doanh thu", revenueDataset));
         formatChart(chartPanel);
 
-        // Load room type usage (sử dụng)
+        // Compute totals for KPI tiles
+        int totalUsed = 0;
         List<Object[]> roomTypeStats = service.getRoomTypeUsageForYear(year);
         for (Object[] row : roomTypeStats) {
-            String type = String.valueOf(row[0]);
-            int count = 0;
-            try { 
-                count = Integer.parseInt(String.valueOf(row[1])); 
-            } catch (Exception ex) { }
-            pieRoomDataset.setValue(type, count);
+            int count = 0; try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            totalUsed += count;
         }
-        pieRoomPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false));
 
-        // Load room type booked (đặt)
+        int totalBooked = 0;
         List<Object[]> roomTypeBookedStats = service.getRoomTypeBookedForYear(year);
+        pieRoomBookedDataset.clear();
         for (Object[] row : roomTypeBookedStats) {
             String type = String.valueOf(row[0]);
-            int count = 0;
-            try { 
-                count = Integer.parseInt(String.valueOf(row[1])); 
-            } catch (Exception ex) { }
+            int count = 0; try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            totalBooked += count;
             pieRoomBookedDataset.setValue(type, count);
         }
-        pieRoomBookedPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false));
+
+        // Update KPI labels
+        lblBooked.setText(formatNumber(totalBooked));
+        lblUsed.setText(formatNumber(totalUsed));
+        int delta = totalBooked - totalUsed;
+        String pct = totalBooked > 0 ? String.format(" (%.0f%%)", (totalUsed * 100.0 / totalBooked)) : "";
+        lblDelta.setText(formatNumber(delta) + pct);
+
+
 
         // Load service usage
         List<Object[]> serviceStats = service.getServiceUsageForYear(year);

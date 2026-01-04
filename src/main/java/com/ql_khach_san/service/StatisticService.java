@@ -289,6 +289,75 @@ public class StatisticService {
         return statistic;
     }
 
+    public List<Object[]> getRoomTypeUsageForMonth(int year, int month) {
+        List<Object[]> list = new ArrayList<>();
+        String sql = "SELECT rt.type_name, COUNT(*) as count " +
+                     "FROM checkin ci " +
+                     "JOIN reservation r ON ci.reservation_id = r.reservation_id " +
+                     "JOIN room rm ON r.room_id = rm.room_id " +
+                     "JOIN room_type rt ON rm.type_id = rt.type_id " +
+                     "WHERE YEAR(ci.checkin_time) = ? AND MONTH(ci.checkin_time) = ? " +
+                     "GROUP BY rt.type_name";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            ps.setInt(2, month);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{rs.getString("type_name"), rs.getInt("count")});
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Object[]> getRoomTypeBookedForMonth(int year, int month) {
+        List<Object[]> list = new ArrayList<>();
+        String sql = "SELECT rt.type_name, COUNT(*) as count " +
+                     "FROM reservation r " +
+                     "JOIN room rm ON r.room_id = rm.room_id " +
+                     "JOIN room_type rt ON rm.type_id = rt.type_id " +
+                     "WHERE YEAR(r.booking_date) = ? AND MONTH(r.booking_date) = ? " +
+                     "GROUP BY rt.type_name";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            ps.setInt(2, month);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{rs.getString("type_name"), rs.getInt("count")});
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Object[]> getServiceUsageForMonth(int year, int month) {
+        List<Object[]> list = new ArrayList<>();
+        String sql = "SELECT s.service_name, SUM(su.quantity) as count " +
+                     "FROM service_usage su " +
+                     "JOIN service s ON su.service_id = s.service_id " +
+                     "WHERE YEAR(su.created_at) = ? AND MONTH(su.created_at) = ? " +
+                     "GROUP BY s.service_name";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            ps.setInt(2, month);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Object[]{rs.getString("service_name"), rs.getInt("count")});
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
     /**
      * Get nearest N days with revenue around a target date (for comparison charts)
      */
