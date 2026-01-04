@@ -223,7 +223,18 @@ public class MainFrame extends JFrame {
             // Nhận phòng
             JMenuItem itemNhanPhong = new JMenuItem("Nhận phòng");
             itemNhanPhong.addActionListener(e -> { 
-                new DialogNhanPhong(this, v.getRoomNumber()).setVisible(true);
+                int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "Khách đã tới nhận phòng " + v.getRoomNumber(),
+                    "Thông báo nhận phòng",
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.WARNING_MESSAGE
+                );
+                if (confirm == JOptionPane.YES_OPTION) {
+                    // gọi hàm sử lỹ trong RoomService
+                    JOptionPane.showMessageDialog(this, "Đã nhận phòng " + v.getRoomNumber() + " thành công!");
+                    refreshRoomPanel();
+                }
             });
             menu.add(itemNhanPhong);
             
