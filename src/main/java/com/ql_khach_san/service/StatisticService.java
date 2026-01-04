@@ -1,20 +1,14 @@
 
 package com.ql_khach_san.service;
 
-import com.ql_khach_san.dao.StatisticDAO;
 import com.ql_khach_san.model.Statistic;
 import com.ql_khach_san.config.DBConnection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Date;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.sql.*;
+import java.util.*;
 
 /**
- * Statistic business logic moved to service package
+ * Service layer for statistics - queries data dynamically from invoice, checkin, reservation, service_usage tables
  */
 public class StatisticService {
     /**
@@ -92,29 +86,47 @@ public class StatisticService {
         return list;
     }
 
-    private StatisticDAO statisticDAO;
 
-    public StatisticService() {
-        this.statisticDAO = new StatisticDAO();
-    }
 
-    public List<Statistic> getAllStatistics() {
-        return statisticDAO.getAllStatistics();
-    }
 
-    public List<Statistic> getStatisticsByPeriod(String period) {
-        return statisticDAO.getStatisticsByPeriod(period);
-    }
 
     public List<String[]> getDailyRevenueForMonth(int year, int month) {
-        return statisticDAO.getDailyRevenueForMonth(year, month);
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT DATE(created_at) as d, SUM(total_amount) as revenue FROM invoice WHERE YEAR(created_at)=? AND MONTH(created_at)=? GROUP BY DATE(created_at) ORDER BY DATE(created_at)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            ps.setInt(2, month);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new String[] { rs.getDate("d").toString(), String.valueOf(rs.getDouble("revenue")) });
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
     }
 
     public List<String[]> getMonthlyRevenueForYear(int year) {
-        return statisticDAO.getMonthlyRevenueForYear(year);
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT YEAR(created_at) as y, MONTH(created_at) as m, SUM(total_amount) as revenue FROM invoice WHERE YEAR(created_at)=? GROUP BY YEAR(created_at), MONTH(created_at) ORDER BY MONTH(created_at)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String label = String.format("%04d-%02d", rs.getInt("y"), rs.getInt("m"));
+                    list.add(new String[] { label, String.valueOf(rs.getDouble("revenue")) });
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return list;
     }
 
-    public Statistic generateStatisticByDate(Date date) {
+    public Statistic generateStatisticByDate(java.sql.Date date) {
         Statistic statistic = new Statistic();
         statistic.setStatDate(new java.util.Date(date.getTime()));
         statistic.setStatPeriod("day");
@@ -174,7 +186,7 @@ public class StatisticService {
     public Statistic generateStatisticByMonth(int year, int month) {
         Statistic statistic = new Statistic();
         statistic.setStatPeriod("month");
-        statistic.setStatDate(Date.valueOf(String.format("%04d-%02d-01", year, month)));
+        statistic.setStatDate(java.sql.Date.valueOf(String.format("%04d-%02d-01", year, month)));
         
         try (Connection conn = DBConnection.getConnection()) {
             // Revenue
@@ -235,7 +247,7 @@ public class StatisticService {
     public Statistic generateStatisticByYear(int year) {
         Statistic statistic = new Statistic();
         statistic.setStatPeriod("year");
-        statistic.setStatDate(Date.valueOf(String.format("%04d-01-01", year)));
+        statistic.setStatDate(java.sql.Date.valueOf(String.format("%04d-01-01", year)));
         
         try (Connection conn = DBConnection.getConnection()) {
             // Revenue
@@ -358,17 +370,39 @@ public class StatisticService {
         return list;
     }
 
+
+
     /**
      * Get nearest N days with revenue around a target date (for comparison charts)
      */
-    public List<String[]> getNearestDaysRevenue(Date targetDate, int n) {
-        return statisticDAO.getNearestDaysRevenue(targetDate, n);
+    public List<String[]> getNearestDaysRevenue(java.sql.Date targetDate, int n) {
+        List<String[]> list = new ArrayList<>();
+        String sql = "SELECT DATE(created_at) as d, SUM(total_amount) as revenue " +
+                     "FROM invoice " +
+                     "GROUP BY DATE(created_at) " +
+                     "ORDER BY ABS(DATEDIFF(DATE(created_at), ?)) " +
+                     "LIMIT ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, targetDate);
+            ps.setInt(2, n);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new String[] { rs.getDate("d").toString(), String.valueOf(rs.getDouble("revenue")) });
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        // sort by date ascending
+        list.sort((a,b) -> java.sql.Date.valueOf(a[0]).compareTo(java.sql.Date.valueOf(b[0])));
+        return list;
     }
 
     /**
      * Compute daily statistics for a range ending at endDate for 'days' days (inclusive)
      */
-    public List<Statistic> computeDailyStats(Date endDate, int days) {
+    public List<Statistic> computeDailyStats(java.util.Date endDate, int days) {
         List<Statistic> list = new ArrayList<>();
         Calendar cal = Calendar.getInstance();
         cal.setTime(endDate);
@@ -377,7 +411,7 @@ public class StatisticService {
         for (int i = days - 1; i >= 0; i--) {
             Calendar c = (Calendar) cal.clone();
             c.add(Calendar.DATE, -i);
-            Date d = new Date(c.getTimeInMillis());
+            java.sql.Date d = new java.sql.Date(c.getTimeInMillis());
             Statistic s = generateStatisticByDate(d);
             if (s != null) {
                 s.setStatDate(new java.util.Date(d.getTime()));
