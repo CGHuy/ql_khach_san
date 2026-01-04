@@ -11,10 +11,10 @@ public class RoomDAO {
 
     public List<Room> getAll() {
         List<Room> list = new ArrayList<>();
-        String sql = "SELECT room_id, room_number, type_id, status FROM room";
+        String sql = "SELECT room_id, room_number, type_id, floor_id, status FROM room";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                Room r = new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getString("status"));
+                Room r = new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"));
                 list.add(r);
             }
         } catch (SQLException e) {
@@ -24,12 +24,12 @@ public class RoomDAO {
     }
 
     public Room getById(int id) {
-        String sql = "SELECT room_id, room_number, type_id, status FROM room WHERE room_id = ?";
+        String sql = "SELECT room_id, room_number, type_id, floor_id, status FROM room WHERE room_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getString("status"));
+                    return new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"));
                 }
             }
         } catch (SQLException e) {
@@ -40,12 +40,12 @@ public class RoomDAO {
 
     public List<Room> getByType(int typeId) {
         List<Room> list = new ArrayList<>();
-        String sql = "SELECT room_id, room_number, type_id, status FROM room WHERE type_id = ?";
+        String sql = "SELECT room_id, room_number, type_id, floor_id, status FROM room WHERE type_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, typeId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getString("status")));
+                    list.add(new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status")));
                 }
             }
         } catch (SQLException e) {
@@ -55,11 +55,12 @@ public class RoomDAO {
     }
 
     public boolean insert(Room r) {
-        String sql = "INSERT INTO room(room_number, type_id, status) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO room(room_number, type_id, floor_id, status) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, r.getRoomNumber());
             ps.setInt(2, r.getTypeId());
-            ps.setString(3, r.getStatus());
+            ps.setInt(3, r.getFloorId());
+            ps.setString(4, r.getStatus());
             int affected = ps.executeUpdate();
             if (affected > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -74,12 +75,13 @@ public class RoomDAO {
     }
 
     public boolean update(Room r) {
-        String sql = "UPDATE room SET room_number = ?, type_id = ?, status = ? WHERE room_id = ?";
+        String sql = "UPDATE room SET room_number = ?, type_id = ?, floor_id = ?, status = ? WHERE room_id = ?";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, r.getRoomNumber());
             ps.setInt(2, r.getTypeId());
-            ps.setString(3, r.getStatus());
-            ps.setInt(4, r.getRoomId());
+            ps.setInt(3, r.getFloorId());
+            ps.setString(4, r.getStatus());
+            ps.setInt(5, r.getRoomId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -111,7 +113,7 @@ public class RoomDAO {
     }
     
     public int getActiveReservationId(int roomId) {
-        String sql = "SELECT reservation_id FROM reservation WHERE room_id = ? AND status = 'Đã đặt' LIMIT 1";
+        String sql = "SELECT reservation_id FROM reservation WHERE room_id = ? AND status IN ('Đã đặt', 'Đã nhận phòng') ORDER BY booking_date DESC LIMIT 1";
         try (Connection conn = DBConnection.getConnection(); 
             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, roomId);
@@ -124,50 +126,5 @@ public class RoomDAO {
             e.printStackTrace();
         }
         return 0; // Trả về 0 nếu không tìm thấy đơn nào đang chờ
-    }
-    
-    public boolean cancelReservationTransaction(int roomId, int reservationId) {
-        Connection conn = null;
-        PreparedStatement psRoom = null;
-        PreparedStatement psRes = null;
-
-        try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu Transaction
-
-            String sqlRoom = "UPDATE room SET status = 'Trống' WHERE room_id = ?";
-            psRoom = conn.prepareStatement(sqlRoom);
-            psRoom.setInt(1, roomId);
-            psRoom.executeUpdate();
-
-            String sqlRes = "UPDATE reservation SET status = 'Đã hủy' WHERE reservation_id = ?";
-            psRes = conn.prepareStatement(sqlRes);
-            psRes.setInt(1, reservationId);
-            psRes.executeUpdate();
-
-            conn.commit(); // Lưu thay đổi vào Database
-            return true;
-
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback(); // Quay xe nếu có bất kỳ lỗi nào xảy ra
-                    System.out.println("Transaction rolled back!");
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            e.printStackTrace();
-            return false;
-        } finally {
-            // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
-            try {
-                if (psRoom != null) psRoom.close();
-                if (psRes != null) psRes.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
     }
 }

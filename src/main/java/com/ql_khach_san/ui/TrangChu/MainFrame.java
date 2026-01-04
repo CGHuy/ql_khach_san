@@ -80,7 +80,7 @@ public class MainFrame extends JFrame {
         panel.setPreferredSize(new Dimension(200, 0));
         panel.setBorder(new EmptyBorder(30, 10, 10, 10));
         
-        String[] menuItems = {"Phòng", "Loại Phòng", "Dịch Vụ", "Khách Hàng", "Nhân Viên", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"};
+        String[] menuItems = {"Loại Phòng", "Tầng", "Phòng", "Dịch Vụ", "Khách Hàng", "Nhân Viên", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"};
         
         for (String item : menuItems) {
             JButton button = new JButton(item);
@@ -231,7 +231,7 @@ public class MainFrame extends JFrame {
                     JOptionPane.WARNING_MESSAGE
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
-                    // gọi hàm sử lỹ trong RoomService
+                    roomService.checkInReservation(v.getReservationId());
                     JOptionPane.showMessageDialog(this, "Đã nhận phòng " + v.getRoomNumber() + " thành công!");
                     refreshRoomPanel();
                 }
@@ -249,7 +249,7 @@ public class MainFrame extends JFrame {
                     JOptionPane.WARNING_MESSAGE
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
-                    roomService.cancelReservation(v.getRoomId(), v.getReservationId());
+                    roomService.cancelReservation(v.getReservationId());
                     JOptionPane.showMessageDialog(this, "Đã hủy đặt phòng " + v.getRoomNumber());
                     refreshRoomPanel();
                 }
@@ -260,6 +260,9 @@ public class MainFrame extends JFrame {
             
             // Chi tiết phòng
             JMenuItem itemChiTiet = new JMenuItem("Chi tiết");
+            itemChiTiet.addActionListener(e -> {
+                new DialogChiTiet(this, v).setVisible(true);
+            });
             menu.add(itemChiTiet);
             
         } else if (status.equalsIgnoreCase("Đang dọn")) {

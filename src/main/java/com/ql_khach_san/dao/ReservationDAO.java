@@ -93,7 +93,7 @@ public class ReservationDAO {
             conn = com.ql_khach_san.config.DBConnection.getConnection();
             conn.setAutoCommit(false); // Bắt đầu giao dịch (Transaction)
 
-            // 1. Thêm vào bảng reservation
+            // 1. Thêm đơn
             String sqlRes = "INSERT INTO reservation(customer_id, room_id, booking_date, checkin_date, checkout_date, status) VALUES(?, ?, ?, ?, ?, ?)";
             psRes = conn.prepareStatement(sqlRes, Statement.RETURN_GENERATED_KEYS);
             psRes.setInt(1, res.getCustomerId());
@@ -110,7 +110,7 @@ public class ReservationDAO {
                 }
             }
 
-            // 2. Cập nhật trạng thái phòng trong bảng room sang 'Đã đặt'
+            // 2. Cập nhật trạng thái
             String sqlRoom = "UPDATE room SET status = 'Đã đặt' WHERE room_id = ?";
             psRoom = conn.prepareStatement(sqlRoom);
             psRoom.setInt(1, res.getRoomId());
@@ -132,6 +132,108 @@ public class ReservationDAO {
                 if (psRoom != null) psRoom.close();
                 if (conn != null) conn.close();
             } catch (SQLException e) { e.printStackTrace(); }
+        }
+    }
+    
+    public boolean cancelReservationTransaction(Reservation res) {
+        Connection conn = null;
+        PreparedStatement psRoom = null;
+        PreparedStatement psRes = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu Transaction
+
+            String sqlRoom = "UPDATE room SET status = 'Trống' WHERE room_id = ?";
+            psRoom = conn.prepareStatement(sqlRoom);
+            psRoom.setInt(1, res.getRoomId());
+            psRoom.executeUpdate();
+
+            String sqlRes = "UPDATE reservation SET status = 'Đã hủy' WHERE reservation_id = ?";
+            psRes = conn.prepareStatement(sqlRes);
+            psRes.setInt(1, res.getReservationId());
+            psRes.executeUpdate();
+
+            conn.commit(); // Lưu thay đổi vào Database
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); // Quay xe nếu có bất kỳ lỗi nào xảy ra
+                    System.out.println("Transaction rolled back!");
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
+            try {
+                if (psRoom != null) psRoom.close();
+                if (psRes != null) psRes.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    public boolean checkInReservationTransaction(Reservation res) {
+        Connection conn = null;
+        PreparedStatement psRoom = null;
+        PreparedStatement psRes = null;
+        PreparedStatement psCheckin = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu Transaction
+
+            // Cập nhật trạng thái phòng
+            String sqlRoom = "UPDATE room SET status = 'Đã thuê' WHERE room_id = ?";
+            psRoom = conn.prepareStatement(sqlRoom);
+            psRoom.setInt(1, res.getRoomId());
+            psRoom.executeUpdate();
+
+            // Cập nhật trạng thái reservation
+            String sqlRes = "UPDATE reservation SET status = 'Đã nhận phòng' WHERE reservation_id = ?";
+            psRes = conn.prepareStatement(sqlRes);
+            psRes.setInt(1, res.getReservationId());
+            psRes.executeUpdate();
+
+            // Tạo bản ghi checkin
+            String sqlCheckin = "INSERT INTO checkin(reservation_id, checkin_time, checkout_time) VALUES(?, ?, ?)";
+            psCheckin = conn.prepareStatement(sqlCheckin);
+            psCheckin.setInt(1, res.getReservationId());
+            psCheckin.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+            psCheckin.setTimestamp(3, null);
+            psCheckin.executeUpdate();
+
+            conn.commit(); // Lưu thay đổi vào Database
+            return true;
+
+        } catch (Exception e) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); // Quay xe nếu có bất kỳ lỗi nào xảy ra
+                    System.out.println("Transaction rolled back!");
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
+            try {
+                if (psRoom != null) psRoom.close();
+                if (psRes != null) psRes.close();
+                if (psCheckin != null) psCheckin.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -25,16 +25,6 @@ public class RoomService {
         }
     }
     
-    // Cập nhật trạng thái đơn đặt
-    public boolean updateReservationStatus(int reservationId, String newStatus) {
-        try {
-            return reservationDAO.updateStatus(reservationId, newStatus);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     // Lấy thông tin phòng theo ID
     public Room getRoomById(int roomId) {
         try {
@@ -50,14 +40,6 @@ public class RoomService {
 
     // Trả phòng
     public boolean checkOutRoom(int roomId) { return updateRoomStatus(roomId, "Đang dọn"); }
-
-    // Dọn dẹp xong
-    public boolean checkClean(int roomId) { return updateRoomStatus(roomId, "Trống"); }
-    
-    // Huỷ đặt phòng
-    public boolean cancelReservation(int roomId, int reservationId) {
-        return updateRoomStatus(roomId, "Trống") && updateReservationStatus(reservationId, "Đã hủy");
-    }
     
     // Đặt phòng
     public boolean makeReservation(int roomId, int customerId, LocalDateTime checkin, LocalDateTime checkout) {
@@ -71,4 +53,25 @@ public class RoomService {
 
         return reservationDAO.createReservationTransaction(res);
     }
+    
+    // Huỷ đặt phòng
+    public boolean cancelReservation(int reservationId) {
+        Reservation res = reservationDAO.getById(reservationId);
+        if (res != null) {
+            return reservationDAO.cancelReservationTransaction(res);
+        }
+        return false;
+    }
+    
+    // Nhận phòng (check-in)
+    public boolean checkInReservation(int reservationId) {
+        Reservation res = reservationDAO.getById(reservationId);
+        if (res != null) {
+            return reservationDAO.checkInReservationTransaction(res);
+        }
+        return false;
+    }
+    
+    // Dọn dẹp xong
+    public boolean checkClean(int roomId) { return updateRoomStatus(roomId, "Trống"); }
 }
