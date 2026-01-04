@@ -1,9 +1,8 @@
-package com.ql_khach_san.model;
+package com.ql_khach_san.ui.ThongKe;
 
 import java.util.Date;
 
 public class Statistic {
-    private int statisticId;
     private Date statDate;
     private String statPeriod; // 'day', 'month', 'year'
     private double revenue;
@@ -13,12 +12,13 @@ public class Statistic {
     private int roomRentedCount;
     private int serviceCount;
     private String note;
-    private Date createdAt;
 
     public Statistic() {}
 
-    public Statistic(int statisticId, Date statDate, String statPeriod, double revenue, double roomRevenue, double serviceRevenue, int customerCount, int roomRentedCount, int serviceCount, String note, Date createdAt) {
-        this.statisticId = statisticId;
+    /**
+     * Convenience constructor for computed statistics
+     */
+    public Statistic(Date statDate, String statPeriod, double revenue, double roomRevenue, double serviceRevenue, int customerCount, int roomRentedCount, int serviceCount, String note) {
         this.statDate = statDate;
         this.statPeriod = statPeriod;
         this.revenue = revenue;
@@ -28,13 +28,9 @@ public class Statistic {
         this.roomRentedCount = roomRentedCount;
         this.serviceCount = serviceCount;
         this.note = note;
-        this.createdAt = createdAt;
     }
 
-    // Getters and setters
-    public int getStatisticId() { return statisticId; }
-    public void setStatisticId(int statisticId) { this.statisticId = statisticId; }
-
+    // Getters and setters (only fields currently used by Service/UI)
     public Date getStatDate() { return statDate; }
     public void setStatDate(Date statDate) { this.statDate = statDate; }
 
@@ -61,7 +57,4 @@ public class Statistic {
 
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
-
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 }

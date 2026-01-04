@@ -1,6 +1,5 @@
 package com.ql_khach_san.ui.ThongKe;
 
-import com.ql_khach_san.service.StatisticService;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;

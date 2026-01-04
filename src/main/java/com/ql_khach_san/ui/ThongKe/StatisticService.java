@@ -1,7 +1,6 @@
 
-package com.ql_khach_san.service;
+package com.ql_khach_san.ui.ThongKe;
 
-import com.ql_khach_san.model.Statistic;
 import com.ql_khach_san.config.DBConnection;
 
 import java.sql.*;

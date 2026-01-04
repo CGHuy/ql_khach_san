@@ -1,7 +1,5 @@
 package com.ql_khach_san.ui.ThongKe;
 
-import com.ql_khach_san.model.Statistic;
-import com.ql_khach_san.service.StatisticService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
