@@ -78,4 +78,20 @@ public class EmployeeDAO {
         }
         return false;
     }
+
+    public List<Employee> getAll() {
+        List<Employee> list = new ArrayList<>();
+        String sql = "SELECT employee_id, username, password, full_name, role FROM employee ORDER BY full_name";
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Employee e = new Employee(rs.getInt("employee_id"), rs.getString("username"), rs.getString("password"), rs.getString("full_name"), rs.getString("role"));
+                list.add(e);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
 }
