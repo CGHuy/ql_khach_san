@@ -19,6 +19,9 @@ public class MonthStatisticFrame extends JFrame {
     private StatisticService service = new com.ql_khach_san.service.StatisticService();
     private ChartPanel chartPanel;
     private DefaultTableModel tableModel;
+    
+    // Cache to avoid redundant queries
+    private java.util.Map<Integer, java.util.List<String[]>> dataCache = new java.util.HashMap<>();
 
     public MonthStatisticFrame() {
         setTitle("Thống kê theo tháng");
@@ -57,18 +60,30 @@ public class MonthStatisticFrame extends JFrame {
     }
 
     private void loadForYear(int year) {
+        // Check cache first
+        if (dataCache.containsKey(year)) {
+            displayYearData(year, dataCache.get(year));
+            return;
+        }
+        
         java.util.List<String[]> data = service.getMonthlyRevenueForYear(year);
+        dataCache.put(year, data);
+        displayYearData(year, data);
+    }
+
+    private void displayYearData(int year, java.util.List<String[]> data) {
         tableModel.setRowCount(0);
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         DecimalFormat df = new DecimalFormat("#,##0");
+        
         for (String[] row : data) {
-            // row[0] formatted as yyyy-MM; show MM label
             String label = row[0].length() >= 7 ? row[0].substring(5) : row[0];
             double val = 0.0;
-            try { val = Double.parseDouble(row[1]); } catch (Exception ex) { val = 0.0; }
+            try { val = Double.parseDouble(row[1]); } catch (Exception ex) { }
             tableModel.addRow(new Object[]{label, df.format(val)});
             dataset.addValue(val, "Doanh thu", label);
         }
+        
         JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm " + year, "Tháng", "Doanh thu", dataset);
         try {
             CategoryPlot plot = chart.getCategoryPlot();

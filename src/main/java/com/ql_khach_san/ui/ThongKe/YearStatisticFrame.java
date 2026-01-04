@@ -25,6 +25,12 @@ public class YearStatisticFrame extends JFrame {
     private ChartPanel pieRoomPanel;
     private ChartPanel pieServicePanel;
     private DefaultTableModel tableModel;
+    
+    // Cache datasets to avoid recreation
+    private DefaultCategoryDataset revenueDataset;
+    private DefaultPieDataset pieRoomDataset;
+    private DefaultPieDataset pieRoomBookedDataset;
+    private DefaultPieDataset pieServiceDataset;
 
     public YearStatisticFrame() {
         setTitle("Thống kê theo năm");
@@ -41,31 +47,34 @@ public class YearStatisticFrame extends JFrame {
         control.add(btnGen);
         add(control, BorderLayout.NORTH);
 
+        // Initialize datasets once
+        revenueDataset = new DefaultCategoryDataset();
+        pieRoomDataset = new DefaultPieDataset();
+        pieRoomBookedDataset = new DefaultPieDataset();
+        pieServiceDataset = new DefaultPieDataset();
+
         // Main chart: Doanh thu theo tháng
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm", "Tháng", "Doanh thu", dataset);
+        JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm", "Tháng", "Doanh thu", revenueDataset);
         chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(1150, 320)); // slightly taller to fit grid layout comfortably
+        chartPanel.setPreferredSize(new Dimension(1150, 380));
+        formatChart(chartPanel);
 
         // Pie chart for room types
-        DefaultPieDataset pieRoomDataset = new DefaultPieDataset();
         JFreeChart pieRoomChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false);
         pieRoomPanel = new ChartPanel(pieRoomChart);
         pieRoomPanel.setPreferredSize(new Dimension(550, 300));
 
-        // Pie chart for room types booked (được đặt)
-        DefaultPieDataset pieRoomBookedDataset = new DefaultPieDataset();
+        // Pie chart for room types booked
         JFreeChart pieRoomBookedChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false);
         pieRoomBookedPanel = new ChartPanel(pieRoomBookedChart);
         pieRoomBookedPanel.setPreferredSize(new Dimension(550, 300));
 
         // Pie chart for services
-        DefaultPieDataset pieServiceDataset = new DefaultPieDataset();
         JFreeChart pieServiceChart = ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false);
         pieServicePanel = new ChartPanel(pieServiceChart);
         pieServicePanel.setPreferredSize(new Dimension(550, 300));
 
-        // Panel to hold all charts in a 2x2 grid for balanced layout
+        // Panel to hold all charts in a 2x2 grid
         JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         JPanel pnlChartMain = new JPanel(new BorderLayout());
         pnlChartMain.add(chartPanel, BorderLayout.CENTER);
@@ -106,95 +115,64 @@ public class YearStatisticFrame extends JFrame {
         }
     }
 
-    private void loadForYear(int year) {
-                // Pie chart: loại phòng được đặt (reservation)
-                DefaultPieDataset pieRoomBookedDataset = new DefaultPieDataset();
-                java.util.List<Object[]> roomTypeBookedStats = service.getRoomTypeBookedForYear(year); // List<Object[]>: {String typeName, Integer count}
-                for (Object[] row : roomTypeBookedStats) {
-                    String type = String.valueOf(row[0]);
-                    int count = 0;
-                    try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { count = 0; }
-                    pieRoomBookedDataset.setValue(type, count);
-                }
-                JFreeChart pieRoomBookedChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false);
-                pieRoomBookedPanel.setChart(pieRoomBookedChart);
-        // Doanh thu theo tháng
-        List<String[]> data = service.getMonthlyRevenueForYear(year);
-        tableModel.setRowCount(0);
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        DecimalFormat df = new DecimalFormat("#,##0");
-        for (String[] row : data) {
-            String label = row[0].length() >= 7 ? row[0].substring(5) : row[0];
-            double val = 0.0;
-            try { val = Double.parseDouble(row[1]); } catch (Exception ex) { val = 0.0; }
-            tableModel.addRow(new Object[]{label, df.format(val)});
-            dataset.addValue(val, "Doanh thu", label);
-        }
-        JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm " + year, "Tháng", "Doanh thu", dataset);
-        try {
-            CategoryPlot plot = chart.getCategoryPlot();
+    private void formatChart(ChartPanel panel) {
+        if (panel.getChart() != null && panel.getChart().getPlot() instanceof CategoryPlot) {
+            CategoryPlot plot = (CategoryPlot) panel.getChart().getPlot();
             NumberAxis range = (NumberAxis) plot.getRangeAxis();
             range.setNumberFormatOverride(new DecimalFormat("#,##0"));
-        } catch (Exception ex) {}
-        chartPanel.setChart(chart);
+        }
+    }
 
-        // Pie chart: loại phòng được sử dụng
-        DefaultPieDataset pieRoomDataset = new DefaultPieDataset();
-        List<Object[]> roomTypeStats = service.getRoomTypeUsageForYear(year); // List<Object[]>: {String typeName, Integer count}
+    private void loadForYear(int year) {
+        // Load all data at once
+        revenueDataset.clear();
+        pieRoomDataset.clear();
+        pieRoomBookedDataset.clear();
+        pieServiceDataset.clear();
+        tableModel.setRowCount(0);
+
+        DecimalFormat df = new DecimalFormat("#,##0");
+
+        // Load monthly revenue
+        List<String[]> monthlyData = service.getMonthlyRevenueForYear(year);
+        for (String[] row : monthlyData) {
+            String label = row[0].length() >= 7 ? row[0].substring(5) : row[0];
+            double val = 0.0;
+            try { val = Double.parseDouble(row[1]); } catch (Exception ex) { }
+            tableModel.addRow(new Object[]{label, df.format(val)});
+            revenueDataset.addValue(val, "Doanh thu", label);
+        }
+        chartPanel.setChart(ChartFactory.createBarChart("Doanh thu theo tháng trong năm " + year, "Tháng", "Doanh thu", revenueDataset));
+        formatChart(chartPanel);
+
+        // Load room type usage (sử dụng)
+        List<Object[]> roomTypeStats = service.getRoomTypeUsageForYear(year);
         for (Object[] row : roomTypeStats) {
             String type = String.valueOf(row[0]);
             int count = 0;
-            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { count = 0; }
+            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
             pieRoomDataset.setValue(type, count);
         }
-        JFreeChart pieRoomChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false);
-        pieRoomPanel.setChart(pieRoomChart);
+        pieRoomPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false));
 
-        // Pie chart: dịch vụ được sử dụng
-        DefaultPieDataset pieServiceDataset = new DefaultPieDataset();
-        List<Object[]> serviceStats = service.getServiceUsageForYear(year); // List<Object[]>: {String serviceName, Integer count}
-        for (Object[] row : serviceStats) {
-            String service = String.valueOf(row[0]);
+        // Load room type booked (đặt)
+        List<Object[]> roomTypeBookedStats = service.getRoomTypeBookedForYear(year);
+        for (Object[] row : roomTypeBookedStats) {
+            String type = String.valueOf(row[0]);
             int count = 0;
-            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { count = 0; }
-            pieServiceDataset.setValue(service, count);
+            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            pieRoomBookedDataset.setValue(type, count);
         }
-        JFreeChart pieServiceChart = ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false);
-        pieServicePanel.setChart(pieServiceChart);
-    }
+        pieRoomBookedPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false));
 
-    private void loadSavedStatsForYear(int year) {
-        // Load saved statistics for this year and show in table: ID | Date | Period | Revenue | note
-        java.util.List<com.ql_khach_san.model.Statistic> list = service.getStatisticsByPeriod("year");
-        tableModel.setRowCount(0);
-        // change table to columns: ID, Date, Revenue, Note
-        tableModel.setColumnIdentifiers(new String[]{"ID", "Ngày", "Doanh thu", "Ghi chú"});
-        DecimalFormat df = new DecimalFormat("#,##0");
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        for (com.ql_khach_san.model.Statistic s : list) {
-            java.util.Calendar cal = java.util.Calendar.getInstance();
-            cal.setTime(s.getStatDate());
-            int y = cal.get(java.util.Calendar.YEAR);
-            if (y == year) {
-                String dateStr = sdf.format(s.getStatDate());
-                String revStr = df.format(s.getRevenue());
-                tableModel.addRow(new Object[]{s.getStatisticId(), dateStr, revStr, s.getNote()});
-            }
+        // Load service usage
+        List<Object[]> serviceStats = service.getServiceUsageForYear(year);
+        for (Object[] row : serviceStats) {
+            String serviceName = String.valueOf(row[0]);
+            int count = 0;
+            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            pieServiceDataset.setValue(serviceName, count);
         }
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            String label = tableModel.getValueAt(i, 1).toString();
-            String revStr = tableModel.getValueAt(i, 2).toString();
-            double val = 0.0;
-            try { val = Double.parseDouble(revStr.replaceAll("[^0-9.-]", "")); } catch (Exception ex) { val = 0.0; }
-            dataset.addValue(val, "Doanh thu", label);
-        }
-        JFreeChart chart = ChartFactory.createBarChart("Thống kê đã lưu - năm " + year, "Ngày", "Doanh thu", dataset);
-        try {
-            CategoryPlot plot = chart.getCategoryPlot();
-            NumberAxis range = (NumberAxis) plot.getRangeAxis();
-            range.setNumberFormatOverride(new DecimalFormat("#,##0"));
-        } catch (Exception ex) {}
-        chartPanel.setChart(chart);
+        pieServicePanel.setChart(ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false));
     }
 }

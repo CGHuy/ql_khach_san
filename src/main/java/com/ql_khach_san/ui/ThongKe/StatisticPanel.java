@@ -23,7 +23,12 @@ public class StatisticPanel extends JPanel {
     private ChartPanel chartPanel;
     private JSpinner spinnerDate;
     private javax.swing.Timer autoComputeTimer;
-    private int compareWindow = 7; // number of nearest days to include in comparison
+    private int compareWindow = 7;
+    
+    // Cache last loaded data to avoid redundant database queries
+    private java.util.List<Statistic> lastComputedRange = null;
+    private java.util.List<String[]> lastComparisonData = null;
+    private java.util.Date lastLoadedDate = null;
 
     public StatisticPanel() {
         statisticService = new com.ql_khach_san.service.StatisticService();
@@ -174,10 +179,7 @@ public class StatisticPanel extends JPanel {
     private JPanel topContainerRef = null;
 
     // Comparison view state
-    private java.util.List<String[]> lastComparisonData = null;
     private boolean inComparisonView = false;
-
-    // Live vs saved view
 
 
     /**
@@ -208,9 +210,21 @@ public class StatisticPanel extends JPanel {
      */
     private void computeRangeEndingAt(java.util.Date d) {
         if (d == null) return;
+        
+        // Avoid redundant computations for the same date
+        if (lastLoadedDate != null && lastLoadedDate.equals(d) && lastComputedRange != null) {
+            displayComputedRange(lastComputedRange);
+            return;
+        }
+        
         java.sql.Date end = new java.sql.Date(d.getTime());
         java.util.List<Statistic> list = statisticService.computeDailyStats(end, compareWindow);
         if (list == null) list = new java.util.ArrayList<>();
+        
+        // Cache the result
+        lastComputedRange = list;
+        lastLoadedDate = new java.util.Date(d.getTime());
+        
         displayComputedRange(list);
     }
 
@@ -218,16 +232,18 @@ public class StatisticPanel extends JPanel {
         this.lastComparisonData = data;
         this.inComparisonView = true;
 
-        // Set simple columns Date / Revenue
         String[] cols = new String[] {"Ngày", "Doanh thu"};
         tableModel.setColumnIdentifiers(cols);
         tableModel.setRowCount(0);
+        
         SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
+        
         for (String[] r : data) {
             String label = r[0];
             try { label = sdfOut.format(sdfIn.parse(r[0])); } catch (Exception ex) { }
-            double val = 0.0; try { val = Double.parseDouble(r[1]); } catch (Exception ex) { }
+            double val = 0.0; 
+            try { val = Double.parseDouble(r[1]); } catch (Exception ex) { }
             tableModel.addRow(new Object[] { label, formatMoney(val) });
         }
         updateChartForComparison(data);
@@ -318,39 +334,44 @@ public class StatisticPanel extends JPanel {
 
     private void toggleChartType() {
         chartIsBar = !chartIsBar;
-        // refresh chart using current view
+        // refresh chart using cached data without recomputing
         if (inComparisonView && lastComparisonData != null) {
             updateChartForComparison(lastComparisonData);
+        } else if (lastComputedRange != null) {
+            updateChart(lastComputedRange);
         } else {
             loadData();
         }
     }
 
     private void updateChart(List<Statistic> list) {
-        if (chartPanel == null) return; // bảo vệ null
+        if (chartPanel == null || list == null || list.isEmpty()) return;
+        
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        // sắp xếp theo ngày tăng dần để biểu đồ dễ đọc
+        // sắp xếp theo ngày tăng dần
         list.sort(Comparator.comparing(Statistic::getStatDate));
-        SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
+        
         for (Statistic s : list) {
-            String dateLabel = sdfIn.format(s.getStatDate());
-            try { dateLabel = sdfOut.format(s.getStatDate()); } catch (Exception ex) {}
+            String dateLabel = sdfOut.format(s.getStatDate());
             String label = (s.getStatPeriod() != null && !s.getStatPeriod().isEmpty() && !s.getStatPeriod().equals("day"))
                     ? dateLabel + " (" + s.getStatPeriod() + ")" : dateLabel;
             dataset.addValue(s.getRevenue(), "Doanh thu", label);
         }
+        
         JFreeChart chart;
         if (chartIsBar) {
             chart = ChartFactory.createBarChart("Doanh thu", "Thời gian", "Doanh thu", dataset);
         } else {
             chart = ChartFactory.createLineChart("Doanh thu", "Thời gian", "Doanh thu", dataset);
         }
+        
         try {
             CategoryPlot plot = chart.getCategoryPlot();
             NumberAxis range = (NumberAxis) plot.getRangeAxis();
             range.setNumberFormatOverride(new DecimalFormat("#,##0"));
         } catch (Exception ex) {}
+        
         chartPanel.setChart(chart);
     }
 
