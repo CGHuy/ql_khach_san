@@ -1,7 +1,7 @@
 package com.ql_khach_san.ui.ThongKe;
 
-
 import com.ql_khach_san.service.StatisticService;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -14,16 +14,15 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.List;
-
+import java.util.Calendar;
 
 public class YearStatisticFrame extends JFrame {
-        private ChartPanel pieRoomBookedPanel;
-    private StatisticService service = new com.ql_khach_san.service.StatisticService();
+    private StatisticService service = new StatisticService();
     private ChartPanel chartPanel;
     private ChartPanel pieRoomPanel;
     private ChartPanel pieServicePanel;
+    private ChartPanel pieRoomBookedPanel;
     private DefaultTableModel tableModel;
     
     // Cache datasets to avoid recreation
@@ -40,10 +39,13 @@ public class YearStatisticFrame extends JFrame {
 
         JPanel control = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JComboBox<String> cbYear = new JComboBox<>();
-        int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
-        for (int y = currentYear; y >= 2000; y--) cbYear.addItem(String.valueOf(y));
+        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        for (int y = currentYear; y >= 2000; y--) {
+            cbYear.addItem(String.valueOf(y));
+        }
         JButton btnGen = new JButton("Xem năm");
-        control.add(new JLabel("Năm:")); control.add(cbYear);
+        control.add(new JLabel("Năm:"));
+        control.add(cbYear);
         control.add(btnGen);
         add(control, BorderLayout.NORTH);
 
@@ -56,52 +58,43 @@ public class YearStatisticFrame extends JFrame {
         // Main chart: Doanh thu theo tháng
         JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm", "Tháng", "Doanh thu", revenueDataset);
         chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(1150, 380));
+        chartPanel.setPreferredSize(new Dimension(575, 190));
         formatChart(chartPanel);
 
         // Pie chart for room types
         JFreeChart pieRoomChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false);
         pieRoomPanel = new ChartPanel(pieRoomChart);
-        pieRoomPanel.setPreferredSize(new Dimension(550, 300));
+        pieRoomPanel.setPreferredSize(new Dimension(575, 190));
 
         // Pie chart for room types booked
         JFreeChart pieRoomBookedChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false);
         pieRoomBookedPanel = new ChartPanel(pieRoomBookedChart);
-        pieRoomBookedPanel.setPreferredSize(new Dimension(550, 300));
+        pieRoomBookedPanel.setPreferredSize(new Dimension(575, 190));
 
         // Pie chart for services
         JFreeChart pieServiceChart = ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false);
         pieServicePanel = new ChartPanel(pieServiceChart);
-        pieServicePanel.setPreferredSize(new Dimension(550, 300));
+        pieServicePanel.setPreferredSize(new Dimension(575, 190));
 
         // Panel to hold all charts in a 2x2 grid
-        JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-        JPanel pnlChartMain = new JPanel(new BorderLayout());
-        pnlChartMain.add(chartPanel, BorderLayout.CENTER);
-        chartsPanel.add(pnlChartMain);
-
-        JPanel pnlPie1 = new JPanel(new BorderLayout());
-        pnlPie1.add(pieRoomPanel, BorderLayout.CENTER);
-        chartsPanel.add(pnlPie1);
-
-        JPanel pnlPie2 = new JPanel(new BorderLayout());
-        pnlPie2.add(pieRoomBookedPanel, BorderLayout.CENTER);
-        chartsPanel.add(pnlPie2);
-
-        JPanel pnlPie3 = new JPanel(new BorderLayout());
-        pnlPie3.add(pieServicePanel, BorderLayout.CENTER);
-        chartsPanel.add(pnlPie3);
+        JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        chartsPanel.add(chartPanel);
+        chartsPanel.add(pieRoomPanel);
+        chartsPanel.add(pieRoomBookedPanel);
+        chartsPanel.add(pieServicePanel);
 
         // Add some padding around charts
         JPanel wrapper = new JPanel(new BorderLayout());
-        wrapper.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        wrapper.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
         wrapper.add(chartsPanel, BorderLayout.CENTER);
         add(wrapper, BorderLayout.CENTER);
 
         // Table for doanh thu
-        tableModel = new DefaultTableModel(new String[]{"Tháng","Doanh thu"},0);
+        tableModel = new DefaultTableModel(new String[]{"Tháng","Doanh thu"}, 0);
         JTable tbl = new JTable(tableModel);
-        add(new JScrollPane(tbl), BorderLayout.SOUTH);
+        JScrollPane scrollPane = new JScrollPane(tbl);
+        scrollPane.setPreferredSize(new Dimension(1180, 150));
+        add(scrollPane, BorderLayout.SOUTH);
 
         btnGen.addActionListener(e -> {
             int y = Integer.parseInt((String)cbYear.getSelectedItem());
@@ -138,7 +131,9 @@ public class YearStatisticFrame extends JFrame {
         for (String[] row : monthlyData) {
             String label = row[0].length() >= 7 ? row[0].substring(5) : row[0];
             double val = 0.0;
-            try { val = Double.parseDouble(row[1]); } catch (Exception ex) { }
+            try { 
+                val = Double.parseDouble(row[1]); 
+            } catch (Exception ex) { }
             tableModel.addRow(new Object[]{label, df.format(val)});
             revenueDataset.addValue(val, "Doanh thu", label);
         }
@@ -150,7 +145,9 @@ public class YearStatisticFrame extends JFrame {
         for (Object[] row : roomTypeStats) {
             String type = String.valueOf(row[0]);
             int count = 0;
-            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            try { 
+                count = Integer.parseInt(String.valueOf(row[1])); 
+            } catch (Exception ex) { }
             pieRoomDataset.setValue(type, count);
         }
         pieRoomPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được sử dụng", pieRoomDataset, true, true, false));
@@ -160,7 +157,9 @@ public class YearStatisticFrame extends JFrame {
         for (Object[] row : roomTypeBookedStats) {
             String type = String.valueOf(row[0]);
             int count = 0;
-            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            try { 
+                count = Integer.parseInt(String.valueOf(row[1])); 
+            } catch (Exception ex) { }
             pieRoomBookedDataset.setValue(type, count);
         }
         pieRoomBookedPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false));
@@ -170,7 +169,9 @@ public class YearStatisticFrame extends JFrame {
         for (Object[] row : serviceStats) {
             String serviceName = String.valueOf(row[0]);
             int count = 0;
-            try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
+            try { 
+                count = Integer.parseInt(String.valueOf(row[1])); 
+            } catch (Exception ex) { }
             pieServiceDataset.setValue(serviceName, count);
         }
         pieServicePanel.setChart(ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false));

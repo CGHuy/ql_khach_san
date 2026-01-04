@@ -2,13 +2,17 @@ package com.ql_khach_san.ui.ThongKe;
 
 import com.ql_khach_san.model.Statistic;
 import com.ql_khach_san.service.StatisticService;
-import java.util.List;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Date;
+import java.util.ArrayList;
 import java.util.Comparator;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -22,16 +26,16 @@ public class StatisticPanel extends JPanel {
     private DefaultTableModel tableModel;
     private ChartPanel chartPanel;
     private JSpinner spinnerDate;
-    private javax.swing.Timer autoComputeTimer;
+    private Timer autoComputeTimer;
     private int compareWindow = 7;
     
     // Cache last loaded data to avoid redundant database queries
-    private java.util.List<Statistic> lastComputedRange = null;
-    private java.util.List<String[]> lastComparisonData = null;
-    private java.util.Date lastLoadedDate = null;
+    private List<Statistic> lastComputedRange = null;
+    private List<String[]> lastComparisonData = null;
+    private Date lastLoadedDate = null;
 
     public StatisticPanel() {
-        statisticService = new com.ql_khach_san.service.StatisticService();
+        statisticService = new StatisticService();
         setLayout(new BorderLayout());
         initTable();
         initButtons();
@@ -52,20 +56,20 @@ public class StatisticPanel extends JPanel {
 
 
     private void initButtons() {
-
-
         // Top controls: default Day only, plus buttons to open Month/Year dialogs
         JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         // Day picker
         spinnerDate = new JSpinner(new SpinnerDateModel());
         spinnerDate.setEditor(new JSpinner.DateEditor(spinnerDate, "dd-MM-yyyy"));
-        header.add(new JLabel("Ngày:")); header.add(spinnerDate);
+        header.add(new JLabel("Ngày:")); 
+        header.add(spinnerDate);
 
         // Buttons to open Month/Year dialogs
         JButton btnOpenMonth = new JButton("Thống kê tháng...");
         JButton btnOpenYear = new JButton("Thống kê năm...");
-        header.add(btnOpenMonth); header.add(btnOpenYear);
+        header.add(btnOpenMonth); 
+        header.add(btnOpenYear);
 
         // Chart toggle
         JButton btnChartType = new JButton("Đổi biểu đồ");
@@ -76,22 +80,21 @@ public class StatisticPanel extends JPanel {
         topContainer.add(header, BorderLayout.NORTH);
         add(topContainer, BorderLayout.NORTH);
 
-
-
         // Open month frame
         btnOpenMonth.addActionListener(e -> {
             try {
-                MonthStatisticFrame f = new com.ql_khach_san.ui.ThongKe.MonthStatisticFrame();
+                MonthStatisticFrame f = new MonthStatisticFrame();
                 f.setVisible(true);
             } catch (Throwable t) {
                 t.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Không thể mở Thống kê tháng:\n" + t.toString(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
+        
         // Open year frame
         btnOpenYear.addActionListener(e -> {
             try {
-                YearStatisticFrame f = new com.ql_khach_san.ui.ThongKe.YearStatisticFrame();
+                YearStatisticFrame f = new YearStatisticFrame();
                 f.setVisible(true);
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -101,12 +104,10 @@ public class StatisticPanel extends JPanel {
 
         btnChartType.addActionListener(e -> toggleChartType());
 
-        // Auto compute setup: debounce spinner changes (enabled by default)
-        autoComputeTimer = new javax.swing.Timer(500, ev -> computeForSpinnerDate());
+        // Auto compute setup
+        autoComputeTimer = new Timer(500, ev -> computeForSpinnerDate());
         autoComputeTimer.setRepeats(false);
         spinnerDate.addChangeListener(ev -> autoComputeTimer.restart());
-
-        // Live-only view (no 'Xem đã lưu' toggle)
 
         // Initial compute for today's spinner value
         computeForSpinnerDate();
@@ -115,23 +116,21 @@ public class StatisticPanel extends JPanel {
         if (chartPanel != null) {
             topContainer.add(chartPanel, BorderLayout.CENTER);
         } else {
-            // ensure initChart will add to the same container later by setting a flag
             this.topContainerRef = topContainer;
         }
     }
 
     private void loadData() {
-        loadData(null);
-    }
-
-    private void loadData(String period) {
-        // Live-only: compute range ending at spinner value
         try {
-            java.util.Date d = (java.util.Date) spinnerDate.getValue();
+            Date d = (Date) spinnerDate.getValue();
             computeRangeEndingAt(d);
         } catch (Exception ex) {
             // ignore invalid spinner
         }
+    }
+
+    private void loadData(String period) {
+        loadData();
     }
 
     private void generateForSelectedPeriod(String period, String input) {
@@ -141,8 +140,7 @@ public class StatisticPanel extends JPanel {
             if (period.equals("day")) {
                 sqlDate = java.sql.Date.valueOf(input);
                 stat = statisticService.generateStatisticByDate(sqlDate);
-                // Show comparison with nearest days from DB
-                java.util.List<String[]> nearby = statisticService.getNearestDaysRevenue(sqlDate, 7); // 7 closest days
+                List<String[]> nearby = statisticService.getNearestDaysRevenue(sqlDate, 7);
                 displayDailyRevenueComparison(nearby);
             } else if (period.equals("month")) {
                 String[] parts = input.split("-");
@@ -162,13 +160,11 @@ public class StatisticPanel extends JPanel {
             }
             stat.setStatPeriod(period);
             stat.setNote("");
-            // Saving is disabled in live-only mode
-            JOptionPane.showMessageDialog(this, "Lưu thủ công đã bị vô hiệu hoá; hệ thống hiển thị dữ liệu động từ các bảng nguồn.");
+            JOptionPane.showMessageDialog(this, "Thống kê đã được tính toán.");
             if ("day".equals(period)) {
-                // keep comparison view
                 if (lastComparisonData != null) displayDailyRevenueComparison(lastComparisonData);
             } else {
-                loadData(period);
+                loadData();
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi hoặc định dạng không hợp lệ: " + ex.getMessage());
@@ -185,8 +181,7 @@ public class StatisticPanel extends JPanel {
     /**
      * Display a computed range of daily statistics (full columns)
      */
-    private void displayComputedRange(java.util.List<Statistic> list) {
-        // full columns
+    private void displayComputedRange(List<Statistic> list) {
         String[] fullCols = new String[]{"Ngày", "Doanh thu", "Phòng", "Dịch vụ", "Số khách", "Số phòng"};
         tableModel.setColumnIdentifiers(fullCols);
         tableModel.setRowCount(0);
@@ -200,15 +195,13 @@ public class StatisticPanel extends JPanel {
                 s.getRoomRentedCount()
             });
         }
-        // update chart
         updateChart(list);
-
     }
 
     /**
-     * Compute a range ending at given date (spinner value) and display it (no save)
+     * Compute a range ending at given date (spinner value) and display it
      */
-    private void computeRangeEndingAt(java.util.Date d) {
+    private void computeRangeEndingAt(Date d) {
         if (d == null) return;
         
         // Avoid redundant computations for the same date
@@ -218,17 +211,17 @@ public class StatisticPanel extends JPanel {
         }
         
         java.sql.Date end = new java.sql.Date(d.getTime());
-        java.util.List<Statistic> list = statisticService.computeDailyStats(end, compareWindow);
-        if (list == null) list = new java.util.ArrayList<>();
+        List<Statistic> list = statisticService.computeDailyStats(end, compareWindow);
+        if (list == null) list = new ArrayList<>();
         
         // Cache the result
         lastComputedRange = list;
-        lastLoadedDate = new java.util.Date(d.getTime());
+        lastLoadedDate = new Date(d.getTime());
         
         displayComputedRange(list);
     }
 
-    private void displayDailyRevenueComparison(java.util.List<String[]> data) {
+    private void displayDailyRevenueComparison(List<String[]> data) {
         this.lastComparisonData = data;
         this.inComparisonView = true;
 
@@ -241,29 +234,42 @@ public class StatisticPanel extends JPanel {
         
         for (String[] r : data) {
             String label = r[0];
-            try { label = sdfOut.format(sdfIn.parse(r[0])); } catch (Exception ex) { }
+            try { 
+                label = sdfOut.format(sdfIn.parse(r[0])); 
+            } catch (Exception ex) { }
             double val = 0.0; 
-            try { val = Double.parseDouble(r[1]); } catch (Exception ex) { }
+            try { 
+                val = Double.parseDouble(r[1]); 
+            } catch (Exception ex) { }
             tableModel.addRow(new Object[] { label, formatMoney(val) });
         }
         updateChartForComparison(data);
     }
 
-    private void updateChartForComparison(java.util.List<String[]> data) {
+    private void updateChartForComparison(List<String[]> data) {
         if (chartPanel == null) return;
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sdfOut = new SimpleDateFormat("dd-MM-yyyy");
         for (String[] r : data) {
             String label = r[0];
-            try { label = sdfOut.format(sdfIn.parse(r[0])); } catch (Exception ex) { }
+            try { 
+                label = sdfOut.format(sdfIn.parse(r[0])); 
+            } catch (Exception ex) { }
             double rev = 0.0;
-            try { rev = Double.parseDouble(r[1]); } catch (Exception ex) { rev = 0.0; }
+            try { 
+                rev = Double.parseDouble(r[1]); 
+            } catch (Exception ex) { 
+                rev = 0.0; 
+            }
             dataset.addValue(rev, "Doanh thu", label);
         }
         JFreeChart chart;
-        if (chartIsBar) chart = ChartFactory.createBarChart("So sánh doanh thu quanh ngày", "Ngày", "Doanh thu", dataset);
-        else chart = ChartFactory.createLineChart("So sánh doanh thu quanh ngày", "Ngày", "Doanh thu", dataset);
+        if (chartIsBar) {
+            chart = ChartFactory.createBarChart("So sánh doanh thu quanh ngày", "Ngày", "Doanh thu", dataset);
+        } else {
+            chart = ChartFactory.createLineChart("So sánh doanh thu quanh ngày", "Ngày", "Doanh thu", dataset);
+        }
         try {
             CategoryPlot plot = chart.getCategoryPlot();
             NumberAxis range = (NumberAxis) plot.getRangeAxis();
@@ -275,38 +281,50 @@ public class StatisticPanel extends JPanel {
     // Called by debounce timer to compute based on current spinner value
     private void computeForSpinnerDate() {
         try {
-            java.util.Date d = (java.util.Date) spinnerDate.getValue();
+            Date d = (Date) spinnerDate.getValue();
             computeRangeEndingAt(d);
         } catch (Exception ex) {
             // ignore invalid state
         }
     }
 
-    private String formatDate(java.util.Date d) {
+    private String formatDate(Date d) {
         if (d == null) return "";
-        try { return new SimpleDateFormat("dd-MM-yyyy").format(d); } catch (Exception ex) { return d.toString(); }
+        try { 
+            return new SimpleDateFormat("dd-MM-yyyy").format(d); 
+        } catch (Exception ex) { 
+            return d.toString(); 
+        }
     }
 
     private String formatMoney(double v) {
-        try { return new DecimalFormat("#,##0").format(v); } catch (Exception ex) { return String.valueOf(v); }
+        try { 
+            return new DecimalFormat("#,##0").format(v); 
+        } catch (Exception ex) { 
+            return String.valueOf(v); 
+        }
     }
 
-    private void computeForDate(java.util.Date d) {
+    private void computeForDate(Date d) {
         if (d == null) return;
         java.sql.Date sqlDate = new java.sql.Date(d.getTime());
-        // generate single-day aggregate (not saved)
         Statistic stat = statisticService.generateStatisticByDate(sqlDate);
-        java.util.List<String[]> nearby = statisticService.getNearestDaysRevenue(sqlDate, compareWindow);
+        List<String[]> nearby = statisticService.getNearestDaysRevenue(sqlDate, compareWindow);
+        
         // ensure target date is included (even if revenue zero)
         String target = sqlDate.toString();
         boolean found = false;
         for (String[] r : nearby) {
-            if (r[0].equals(target)) { found = true; break; }
+            if (r[0].equals(target)) { 
+                found = true; 
+                break; 
+            }
         }
         if (!found) {
             double rev = (stat != null) ? stat.getRevenue() : 0.0;
             nearby.add(new String[] { target, String.valueOf(rev) });
         }
+        
         // sort ascending
         nearby.sort((a,b) -> java.sql.Date.valueOf(a[0]).compareTo(java.sql.Date.valueOf(b[0])));
         displayDailyRevenueComparison(nearby);
@@ -373,94 +391,5 @@ public class StatisticPanel extends JPanel {
         } catch (Exception ex) {}
         
         chartPanel.setChart(chart);
-    }
-
-
-
-    private void showAutoDialog() {
-        String period = JOptionPane.showInputDialog(this, "Chọn kỳ thống kê (day/month/year):", "day");
-        if (period == null || period.trim().isEmpty()) return;
-        period = period.trim().toLowerCase();
-        try {
-            Statistic autoStat = null;
-            if (period.equals("day")) {
-                String dateStr = JOptionPane.showInputDialog(this, "Nhập ngày thống kê (yyyy-MM-dd):");
-                if (dateStr == null || dateStr.trim().isEmpty()) return;
-                java.sql.Date date = java.sql.Date.valueOf(dateStr.trim());
-                autoStat = statisticService.generateStatisticByDate(date);
-            } else if (period.equals("month")) {
-                String ym = JOptionPane.showInputDialog(this, "Nhập tháng (yyyy-MM):");
-                if (ym == null || ym.trim().isEmpty()) return;
-                String[] parts = ym.trim().split("-");
-                if (parts.length < 2) throw new IllegalArgumentException("Định dạng không đúng");
-                int y = Integer.parseInt(parts[0]);
-                int m = Integer.parseInt(parts[1]);
-                autoStat = statisticService.generateStatisticByMonth(y, m);
-            } else if (period.equals("year")) {
-                String yStr = JOptionPane.showInputDialog(this, "Nhập năm (yyyy):");
-                if (yStr == null || yStr.trim().isEmpty()) return;
-                int y = Integer.parseInt(yStr.trim());
-                autoStat = statisticService.generateStatisticByYear(y);
-            } else {
-                JOptionPane.showMessageDialog(this, "Kỳ không hợp lệ: sử dụng day/month/year");
-                return;
-            }
-            if (autoStat == null) return;
-            autoStat.setStatPeriod(period);
-            // Cho phép nhập ghi chú nếu muốn
-            String note = JOptionPane.showInputDialog(this, "Ghi chú (nếu có):");
-            autoStat.setNote(note);
-            // Saving is disabled; just compute and display
-            if (period.equals("day")) {
-                java.sql.Date d = new java.sql.Date(autoStat.getStatDate().getTime());
-                java.util.List<String[]> nearby = statisticService.getNearestDaysRevenue(d, 7);
-                displayDailyRevenueComparison(nearby);
-            } else {
-                loadData();
-            }
-            JOptionPane.showMessageDialog(this, "Lưu tự động đã bị vô hiệu hoá; dữ liệu chỉ hiển thị động.");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Ngày/Kỳ không hợp lệ hoặc lỗi: " + ex.getMessage());
-        }
-    }
-
-
-
-
-
-    private void showMonthDialog() {
-        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), "Thống kê tháng", Dialog.ModalityType.APPLICATION_MODAL);
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JComboBox<String> cbYear = new JComboBox<>();
-        int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
-        for (int y = currentYear; y >= 2000; y--) cbYear.addItem(String.valueOf(y));
-        JComboBox<String> cbMonth = new JComboBox<>();
-        for (int m = 1; m <= 12; m++) cbMonth.addItem(String.format("%02d", m));
-        JButton btn = new JButton("Generate");
-        btn.addActionListener(e -> {
-            String input = cbYear.getSelectedItem() + "-" + cbMonth.getSelectedItem();
-            generateForSelectedPeriod("month", input);
-            d.dispose();
-        });
-        p.add(new JLabel("Chọn tháng:")); p.add(cbYear); p.add(cbMonth); p.add(btn);
-        d.add(p);
-        d.pack(); d.setLocationRelativeTo(this); d.setVisible(true);
-    }
-
-    private void showYearDialog() {
-        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), "Thống kê năm", Dialog.ModalityType.APPLICATION_MODAL);
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JComboBox<String> cbYear = new JComboBox<>();
-        int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
-        for (int y = currentYear; y >= 2000; y--) cbYear.addItem(String.valueOf(y));
-        JButton btn = new JButton("Generate");
-        btn.addActionListener(e -> {
-            String input = (String) cbYear.getSelectedItem();
-            generateForSelectedPeriod("year", input);
-            d.dispose();
-        });
-        p.add(new JLabel("Chọn năm:")); p.add(cbYear); p.add(btn);
-        d.add(p);
-        d.pack(); d.setLocationRelativeTo(this); d.setVisible(true);
     }
 }
