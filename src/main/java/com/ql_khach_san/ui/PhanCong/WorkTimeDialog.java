@@ -146,7 +146,6 @@ public class WorkTimeDialog extends JDialog {
         panel.add(btnPanel, gbc);
 
         add(panel);
-        setVisible(true);
     }
 
     private void save() {
