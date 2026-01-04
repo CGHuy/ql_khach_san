@@ -45,7 +45,7 @@ public class YearStatisticFrame extends JFrame {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm", "Tháng", "Doanh thu", dataset);
         chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(1150, 300));
+        chartPanel.setPreferredSize(new Dimension(1150, 320)); // slightly taller to fit grid layout comfortably
 
         // Pie chart for room types
         DefaultPieDataset pieRoomDataset = new DefaultPieDataset();
@@ -65,13 +65,29 @@ public class YearStatisticFrame extends JFrame {
         pieServicePanel = new ChartPanel(pieServiceChart);
         pieServicePanel.setPreferredSize(new Dimension(550, 300));
 
-        // Panel to hold all charts
-        JPanel chartsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        chartsPanel.add(chartPanel);
-        chartsPanel.add(pieRoomPanel);
-        chartsPanel.add(pieRoomBookedPanel);
-        chartsPanel.add(pieServicePanel);
-        add(chartsPanel, BorderLayout.CENTER);
+        // Panel to hold all charts in a 2x2 grid for balanced layout
+        JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        JPanel pnlChartMain = new JPanel(new BorderLayout());
+        pnlChartMain.add(chartPanel, BorderLayout.CENTER);
+        chartsPanel.add(pnlChartMain);
+
+        JPanel pnlPie1 = new JPanel(new BorderLayout());
+        pnlPie1.add(pieRoomPanel, BorderLayout.CENTER);
+        chartsPanel.add(pnlPie1);
+
+        JPanel pnlPie2 = new JPanel(new BorderLayout());
+        pnlPie2.add(pieRoomBookedPanel, BorderLayout.CENTER);
+        chartsPanel.add(pnlPie2);
+
+        JPanel pnlPie3 = new JPanel(new BorderLayout());
+        pnlPie3.add(pieServicePanel, BorderLayout.CENTER);
+        chartsPanel.add(pnlPie3);
+
+        // Add some padding around charts
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        wrapper.add(chartsPanel, BorderLayout.CENTER);
+        add(wrapper, BorderLayout.CENTER);
 
         // Table for doanh thu
         tableModel = new DefaultTableModel(new String[]{"Tháng","Doanh thu"},0);
