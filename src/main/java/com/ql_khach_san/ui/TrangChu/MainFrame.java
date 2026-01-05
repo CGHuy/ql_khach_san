@@ -87,7 +87,7 @@ public class MainFrame extends JFrame {
         panel.setPreferredSize(new Dimension(200, 0));
         panel.setBorder(new EmptyBorder(30, 10, 10, 10));
         
-        String[] menuItems = {"Loại Phòng", "Tầng", "Phòng", "Dịch Vụ", "Khách Hàng", "Nhân Viên", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"};
+        String[] menuItems = {"Loại Phòng", "Tầng", "Phòng", "Dịch Vụ", "Khách Hàng", "Nhân Viên", "Hoá Đơn", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"};
         
         for (String item : menuItems) {
             // Nếu là nhân viên thì ẩn mục "Nhân Viên"
@@ -174,6 +174,14 @@ public class MainFrame extends JFrame {
                     f.setSize(900, 500);
                     f.setLocationRelativeTo(MainFrame.this);
                     f.setVisible(true);
+                });
+            }
+
+            // Thêm action listener cho nút "Hoá Đơn"
+            if (item.equals("Hoá Đơn")) {
+                button.addActionListener(e -> {
+                    com.ql_khach_san.ui.HoaDon.GUI invoiceGui = new com.ql_khach_san.ui.HoaDon.GUI();
+                    invoiceGui.setVisible(true);
                 });
             }
 
