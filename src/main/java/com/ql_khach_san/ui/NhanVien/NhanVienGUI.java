@@ -27,127 +27,138 @@ public class NhanVienGUI extends JFrame {
         loadData();
 
         setTitle("QUẢN LÝ NHÂN VIÊN");
-        setSize(1400, 700);
+        setPreferredSize(new Dimension(1200, 700));
+        pack();
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
     // ================= INIT UI =================
     private void initComponents() {
-        JPanel mainPanel = new JPanel(null);
-        mainPanel.setBackground(new Color(0, 188, 212));
+        // Main panel
+        JPanel mainPanel = new JPanel(new BorderLayout(12, 12));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        mainPanel.setBackground(Color.WHITE);
 
-        // ===== TITLE =====
-        JLabel lblTitle = new JLabel("QUẢN LÝ NHÂN VIÊN", JLabel.CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 20));
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(33, 150, 243));
+        header.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        JLabel lblTitle = new JLabel("QUẢN LÝ NHÂN VIÊN");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblTitle.setForeground(Color.WHITE);
-        lblTitle.setBounds(600, 10, 300, 30);
-        mainPanel.add(lblTitle);
+        header.add(lblTitle, BorderLayout.WEST);
+        mainPanel.add(header, BorderLayout.NORTH);
 
-        // ===== LABELS =====
-        JLabel lblEmployeeID = new JLabel("Mã nhân viên");
-        lblEmployeeID.setForeground(Color.WHITE);
-        lblEmployeeID.setBounds(50, 60, 120, 25);
-        mainPanel.add(lblEmployeeID);
+        // Content
+        JPanel content = new JPanel(new BorderLayout(12, 12));
+        content.setBackground(Color.WHITE);
 
-        JLabel lblUsername = new JLabel("Username");
-        lblUsername.setForeground(Color.WHITE);
-        lblUsername.setBounds(520, 60, 100, 25);
-        mainPanel.add(lblUsername);
+        // Form panel using GridBag
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.anchor = GridBagConstraints.WEST;
 
-        JLabel lblFullName = new JLabel("Họ và tên");
-        lblFullName.setForeground(Color.WHITE);
-        lblFullName.setBounds(50, 110, 120, 25);
-        mainPanel.add(lblFullName);
+        Font labelFont = new Font("Segoe UI", Font.PLAIN, 13);
+        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 13);
 
-        JLabel lblPassword = new JLabel("Password");
-        lblPassword.setForeground(Color.WHITE);
-        lblPassword.setBounds(520, 110, 100, 25);
-        mainPanel.add(lblPassword);
+        // Row 0: ID and Username
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        JLabel lblEmployeeID = new JLabel("Mã nhân viên:"); lblEmployeeID.setFont(labelFont);
+        formPanel.add(lblEmployeeID, gbc);
 
-        JLabel lblRole = new JLabel("Vai trò");
-        lblRole.setForeground(Color.WHITE);
-        lblRole.setBounds(50, 160, 120, 25);
-        mainPanel.add(lblRole);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
+        txtEmployeeID = new JTextField(); txtEmployeeID.setEditable(false); txtEmployeeID.setFont(fieldFont);
+        txtEmployeeID.setBackground(new Color(245,245,245)); txtEmployeeID.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        formPanel.add(txtEmployeeID, gbc);
 
-        JLabel lblTimKiem = new JLabel("Tìm kiếm theo tên");
-        lblTimKiem.setForeground(Color.WHITE);
-        lblTimKiem.setBounds(50, 240, 120, 25);
-        mainPanel.add(lblTimKiem);
+        gbc.gridx = 2; gbc.gridy = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        JLabel lblUsername = new JLabel("Username:"); lblUsername.setFont(labelFont);
+        formPanel.add(lblUsername, gbc);
 
-        // ===== FIELDS =====
-        txtEmployeeID = new JTextField();
-        txtEmployeeID.setBounds(180, 60, 300, 30);
-        txtEmployeeID.setEditable(false);
-        txtEmployeeID.setBackground(Color.LIGHT_GRAY);
-        mainPanel.add(txtEmployeeID);
+        gbc.gridx = 3; gbc.gridy = 0; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
+        txtUsername = new JTextField(); txtUsername.setFont(fieldFont);
+        txtUsername.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        formPanel.add(txtUsername, gbc);
 
-        txtUsername = new JTextField();
-    txtUsername.setBounds(620, 60, 300, 30);
-        mainPanel.add(txtUsername);
+        // Row 1: Fullname and Password
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        JLabel lblFullName = new JLabel("Họ và tên:"); lblFullName.setFont(labelFont);
+        formPanel.add(lblFullName, gbc);
 
-        txtFullName = new JTextField();
-        txtFullName.setBounds(180, 110, 300, 30);
-        mainPanel.add(txtFullName);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
+        txtFullName = new JTextField(); txtFullName.setFont(fieldFont);
+        txtFullName.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        formPanel.add(txtFullName, gbc);
 
-        txtPassword = new JTextField();
-        txtPassword.setBounds(620, 110, 300, 30);
-        mainPanel.add(txtPassword);
+        gbc.gridx = 2; gbc.gridy = 1; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        JLabel lblPassword = new JLabel("Password:"); lblPassword.setFont(labelFont);
+        formPanel.add(lblPassword, gbc);
 
-        cboRole = new JComboBox<>(new String[]{
-            "Nhân viên", "Quản lý"
-        });
-        cboRole.setBounds(180, 160, 300, 30);
-        mainPanel.add(cboRole);
+        gbc.gridx = 3; gbc.gridy = 1; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
+        txtPassword = new JTextField(); txtPassword.setFont(fieldFont);
+        txtPassword.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        formPanel.add(txtPassword, gbc);
 
-        txtTimKiem = new JTextField();
-        txtTimKiem.setBounds(180, 240, 300, 30);
-        mainPanel.add(txtTimKiem);
+        // Row 2: Role and Search
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        JLabel lblRole = new JLabel("Vai trò:"); lblRole.setFont(labelFont);
+        formPanel.add(lblRole, gbc);
 
-        // ===== BUTTONS =====
-        btnThem = new JButton("Thêm");
-        btnThem.setBounds(580, 240, 100, 35);
-        btnThem.setBackground(new Color(173, 216, 230));
-        mainPanel.add(btnThem);
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
+        cboRole = new JComboBox<>(new String[]{"Nhân viên","Quản lý"}); cboRole.setFont(fieldFont);
+        cboRole.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        formPanel.add(cboRole, gbc);
 
-        btnSua = new JButton("Sửa");
-        btnSua.setBounds(700, 240, 100, 35);
-        btnSua.setBackground(new Color(173, 216, 230));
-        mainPanel.add(btnSua);
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0)); btnPanel.setBackground(Color.WHITE);
+        btnThem = new JButton("Thêm"); btnSua = new JButton("Sửa"); btnXoa = new JButton("Xóa"); btnReset = new JButton("Reset");
+        Dimension btnSize = new Dimension(110, 34);
+        for (JButton b : new JButton[]{btnThem, btnSua, btnXoa, btnReset}) { b.setPreferredSize(btnSize); b.setFont(new Font("Segoe UI", Font.PLAIN, 13)); }
+        btnPanel.add(btnThem); btnPanel.add(btnSua); btnPanel.add(btnXoa); btnPanel.add(btnReset);
 
-        btnXoa = new JButton("Xóa");
-        btnXoa.setBounds(820, 240, 100, 35);
-        btnXoa.setBackground(new Color(173, 216, 230));
-        mainPanel.add(btnXoa);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
+        formPanel.add(btnPanel, gbc);
+        gbc.gridwidth = 1;
 
-        btnReset = new JButton("Reset");
-        btnReset.setBounds(940, 240, 100, 35);
-        btnReset.setBackground(new Color(173, 216, 230));
-        mainPanel.add(btnReset);
+        // Search panel above table
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0)); searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(0,0,6,0));
+        JLabel lblTimKiem = new JLabel("Tìm kiếm:"); lblTimKiem.setFont(labelFont);
+        txtTimKiem = new JTextField(24); txtTimKiem.setFont(fieldFont);
+        txtTimKiem.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        searchPanel.add(lblTimKiem); searchPanel.add(txtTimKiem);
 
-        // ===== TABLE =====
+        // Table
         String[] columnNames = {"ID", "Username", "Password", "Họ và tên", "Role"};
-        tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
+        tableModel = new DefaultTableModel(columnNames, 0) { public boolean isCellEditable(int r, int c) { return false; } };
         table = new JTable(tableModel);
-        table.setRowHeight(25);
-        table.getTableHeader().setReorderingAllowed(false);
-        
-        // Cấu hình độ rộng cột
-        table.getColumnModel().getColumn(0).setPreferredWidth(60);  // ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Username
-        table.getColumnModel().getColumn(2).setPreferredWidth(150); // Password
-        table.getColumnModel().getColumn(3).setPreferredWidth(250); // Họ và tên
-        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Role
+        table.setFillsViewportHeight(true);
+        table.setRowHeight(24);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0,0));
+        table.setSelectionBackground(new Color(204,229,255));
+        table.getTableHeader().setBackground(new Color(245,245,245));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getColumnModel().getColumn(0).setPreferredWidth(60);
+        table.getColumnModel().getColumn(1).setPreferredWidth(150);
+        table.getColumnModel().getColumn(2).setPreferredWidth(150);
+        table.getColumnModel().getColumn(3).setPreferredWidth(250);
+        table.getColumnModel().getColumn(4).setPreferredWidth(100);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBounds(50, 300, 1290, 330);
-        mainPanel.add(scrollPane);
+        scrollPane.setPreferredSize(new Dimension(1000, 260));
+
+        JPanel middlePanel = new JPanel(new BorderLayout()); middlePanel.setBackground(Color.WHITE);
+        middlePanel.add(searchPanel, BorderLayout.NORTH);
+        middlePanel.add(scrollPane, BorderLayout.CENTER);
+
+        content.add(formPanel, BorderLayout.NORTH);
+        content.add(middlePanel, BorderLayout.CENTER);
+
+        mainPanel.add(content, BorderLayout.CENTER);
 
         add(mainPanel);
         addEventHandlers();
