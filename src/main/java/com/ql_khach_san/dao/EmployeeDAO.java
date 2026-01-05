@@ -4,29 +4,24 @@ import com.ql_khach_san.config.DBConnection;
 import com.ql_khach_san.model.Employee;
 
 import java.sql.*;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class EmployeeDAO {
 
     public List<Employee> getAll() {
         List<Employee> list = new ArrayList<>();
-        String sql = "SELECT * FROM employee ORDER BY employee_id";
-
-        try (Connection con = DBConnection.getConnection();
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-
+        String sql = "SELECT employee_id, username, password, full_name, role FROM employee ORDER BY employee_id";
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(new Employee(
-                        rs.getInt("employee_id"),
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getString("full_name"),
-                        rs.getString("role")
-                ));
+                Employee e = new Employee(rs.getInt("employee_id"), rs.getString("username"), rs.getString("password"), rs.getString("full_name"), rs.getString("role"));
+                list.add(e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
         return list;
     }
@@ -88,23 +83,53 @@ public class EmployeeDAO {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-return false;
+        return false;
     }
 
-    public List<Employee> getAll() {
-        List<Employee> list = new ArrayList<>();
-        String sql = "SELECT employee_id, username, password, full_name, role FROM employee ORDER BY full_name";
-        try (Connection conn = DBConnection.getConnection(); 
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Employee e = new Employee(rs.getInt("employee_id"), rs.getString("username"), rs.getString("password"), rs.getString("full_name"), rs.getString("role"));
-                list.add(e);
+    public Employee findByUsername(String username) {
+        String sql = "SELECT * FROM employee WHERE username=?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Employee(
+                        rs.getInt("employee_id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("full_name"),
+                        rs.getString("role")
+                );
             }
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return list;
+        return null;
+    }
+
+    public Employee getById(int id) {
+        String sql = "SELECT * FROM employee WHERE employee_id=?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Employee(
+                        rs.getInt("employee_id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("full_name"),
+                        rs.getString("role")
+                );
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
     
     public List<Employee> searchByName(String keyword) {

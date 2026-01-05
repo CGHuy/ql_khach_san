@@ -7,6 +7,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.List;
 
 public class NhanVienGUI extends JFrame {
 
@@ -82,7 +83,7 @@ public class NhanVienGUI extends JFrame {
         mainPanel.add(txtEmployeeID);
 
         txtUsername = new JTextField();
-txtUsername.setBounds(620, 60, 300, 30);
+    txtUsername.setBounds(620, 60, 300, 30);
         mainPanel.add(txtUsername);
 
         txtFullName = new JTextField();
@@ -94,7 +95,7 @@ txtUsername.setBounds(620, 60, 300, 30);
         mainPanel.add(txtPassword);
 
         cboRole = new JComboBox<>(new String[]{
-            "Nhân viên", "Quản lý", "Lễ tân", "Kế toán"
+            "Nhân viên", "Quản lý"
         });
         cboRole.setBounds(180, 160, 300, 30);
         mainPanel.add(cboRole);
@@ -136,6 +137,13 @@ txtUsername.setBounds(620, 60, 300, 30);
         table = new JTable(tableModel);
         table.setRowHeight(25);
         table.getTableHeader().setReorderingAllowed(false);
+        
+        // Cấu hình độ rộng cột
+        table.getColumnModel().getColumn(0).setPreferredWidth(60);  // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Username
+        table.getColumnModel().getColumn(2).setPreferredWidth(150); // Password
+        table.getColumnModel().getColumn(3).setPreferredWidth(250); // Họ và tên
+        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Role
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBounds(50, 300, 1290, 330);
@@ -148,7 +156,10 @@ txtUsername.setBounds(620, 60, 300, 30);
     // ================= LOAD DATA =================
     private void loadData() {
         tableModel.setRowCount(0);
-        for (Employee e : employeeDAO.getAll()) {
+        List<Employee> list = employeeDAO.getAll();
+        System.out.println("Loaded " + list.size() + " employees");
+        for (Employee e : list) {
+            System.out.println("Employee: ID=" + e.getEmployeeId() + ", Name=" + e.getFullName() + ", Role=" + e.getRole());
             tableModel.addRow(new Object[]{
                 e.getEmployeeId(),
                 e.getUsername(),
