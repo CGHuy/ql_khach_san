@@ -162,6 +162,10 @@ public class GUI extends JFrame {
         });
 
         btnThem.addActionListener(e -> {
+            if (txtFullName.getText().trim().isEmpty() || txtPhone.getText().trim().isEmpty() || txtCCCD.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin khách hàng!");
+                return;
+            }
             Customer c = new Customer(
                 0,
                 txtFullName.getText(),
@@ -170,12 +174,23 @@ public class GUI extends JFrame {
                 txtAddress.getText()
             );
             if (customerDAO.insert(c)) {
+                JOptionPane.showMessageDialog(this, "Thêm khách hàng thành công!");
                 loadData();
                 clear();
+            } else {
+                JOptionPane.showMessageDialog(this, "Thêm khách hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         btnSua.addActionListener(e -> {
+            if (txtCustomerID.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần sửa!");
+                return;
+            }
+            if (txtFullName.getText().trim().isEmpty() || txtPhone.getText().trim().isEmpty() || txtCCCD.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng điền đầy đủ thông tin khách hàng!");
+                return;
+            }
             Customer c = new Customer(
                 Integer.parseInt(txtCustomerID.getText()),
                 txtFullName.getText(),
@@ -184,15 +199,33 @@ public class GUI extends JFrame {
                 txtAddress.getText()
             );
             if (customerDAO.update(c)) {
+                JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thành công!");
                 loadData();
                 clear();
+            } else {
+                JOptionPane.showMessageDialog(this, "Cập nhật khách hàng thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         btnXoa.addActionListener(e -> {
-            if (customerDAO.delete(Integer.parseInt(txtCustomerID.getText()))) {
-                loadData();
-                clear();
+            if (txtCustomerID.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng cần xóa!");
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Bạn có chắc chắn muốn xóa khách hàng: " + txtFullName.getText() + "?",
+                "Xác nhận xóa",
+                JOptionPane.YES_NO_OPTION
+            );
+            if (confirm == JOptionPane.YES_OPTION) {
+                if (customerDAO.delete(Integer.parseInt(txtCustomerID.getText()))) {
+                    JOptionPane.showMessageDialog(this, "Xóa khách hàng thành công!");
+                    loadData();
+                    clear();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Khách hàng đang đặt phòng không thể xoá!", "Thông báo", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
