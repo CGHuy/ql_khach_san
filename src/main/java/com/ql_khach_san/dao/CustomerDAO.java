@@ -32,6 +32,30 @@ public class CustomerDAO {
         return list;
     }
 
+    public Customer getById(int id) {
+        String sql = "SELECT * FROM customer WHERE customer_id=?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Customer(
+                        rs.getInt("customer_id"),
+                        rs.getString("full_name"),
+                        rs.getString("phone"),
+                        rs.getString("cccd"),
+                        rs.getString("address")
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public boolean insert(Customer c) {
         String sql = "INSERT INTO customer(full_name, phone, cccd, address) VALUES (?,?,?,?)";
 
