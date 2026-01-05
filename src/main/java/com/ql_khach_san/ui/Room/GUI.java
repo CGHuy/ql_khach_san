@@ -271,7 +271,7 @@ public class GUI extends JFrame {
 			if (success) { JOptionPane.showMessageDialog(this, "Xóa thành công"); loadTable(); }
 			else {
 				String err = roomDao.getLastError();
-				String msg = "Xóa thất bại. Kiểm tra ràng buộc dữ liệu.";
+				String msg = "Phòng đang được đặt không thể xóa !!!";
 				if (err != null && !err.isEmpty()) msg += "\nChi tiết: " + err;
 				JOptionPane.showMessageDialog(this, msg);
 			}
