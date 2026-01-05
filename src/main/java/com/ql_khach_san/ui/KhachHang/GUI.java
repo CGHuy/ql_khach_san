@@ -2,6 +2,7 @@ package com.ql_khach_san.ui.KhachHang;
 
 import com.ql_khach_san.dao.CustomerDAO;
 import com.ql_khach_san.model.Customer;
+import com.ql_khach_san.ui.KhachHang.ReservationHistoryDialog;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -11,7 +12,7 @@ import java.awt.event.*;
 public class GUI extends JFrame {
 
     private JTextField txtCustomerID, txtFullName, txtPhone, txtCCCD, txtAddress, txtTimKiem;
-    private JButton btnThem, btnSua, btnXoa,btnReset;
+    private JButton btnThem, btnSua, btnXoa, btnReset, btnXemLichSu;
     private JTable table;
     private DefaultTableModel tableModel;
 
@@ -100,6 +101,10 @@ public class GUI extends JFrame {
         btnReset.setBounds(940, 240, 100, 35);
         mainPanel.add(btnReset);
 
+        btnXemLichSu = new JButton("Xem lịch sử");
+        btnXemLichSu.setBounds(1060, 240, 140, 35);
+        mainPanel.add(btnXemLichSu);
+
         tableModel = new DefaultTableModel(
                 new String[]{"ID", "Họ và tên", "SĐT", "CCCD", "Địa chỉ"}, 0
         ) {
@@ -143,6 +148,17 @@ public class GUI extends JFrame {
          btnReset.addActionListener(e -> {
                 clear();
                 loadData();
+        });
+
+        btnXemLichSu.addActionListener(e -> {
+            if (txtCustomerID.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn khách hàng trước khi xem lịch sử.");
+                return;
+            }
+            int customerId = Integer.parseInt(txtCustomerID.getText());
+            String customerName = txtFullName.getText();
+            ReservationHistoryDialog dialog = new ReservationHistoryDialog(this, customerId, customerName);
+            dialog.setVisible(true);
         });
 
         btnThem.addActionListener(e -> {
