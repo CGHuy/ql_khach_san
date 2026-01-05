@@ -10,31 +10,6 @@ import java.util.*;
  * Service layer for statistics - queries data dynamically from invoice, checkin, reservation, service_usage tables
  */
 public class StatisticService {
-    /**
-     * Lấy thống kê số lượng từng loại phòng được sử dụng trong năm
-     */
-    public List<Object[]> getRoomTypeUsageForYear(int year) {
-        List<Object[]> list = new ArrayList<>();
-        String sql = "SELECT rt.type_name, COUNT(*) as count " +
-                     "FROM checkin ci " +
-                     "JOIN reservation r ON ci.reservation_id = r.reservation_id " +
-                     "JOIN room rm ON r.room_id = rm.room_id " +
-                     "JOIN room_type rt ON rm.type_id = rt.type_id " +
-                     "WHERE YEAR(ci.checkin_time) = ? " +
-                     "GROUP BY rt.type_name";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, year);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(new Object[]{rs.getString("type_name"), rs.getInt("count")});
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return list;
-    }
 
     /**
      * Lấy thống kê số lượng từng dịch vụ được sử dụng trong năm
@@ -300,29 +275,6 @@ public class StatisticService {
         return statistic;
     }
 
-    public List<Object[]> getRoomTypeUsageForMonth(int year, int month) {
-        List<Object[]> list = new ArrayList<>();
-        String sql = "SELECT rt.type_name, COUNT(*) as count " +
-                     "FROM checkin ci " +
-                     "JOIN reservation r ON ci.reservation_id = r.reservation_id " +
-                     "JOIN room rm ON r.room_id = rm.room_id " +
-                     "JOIN room_type rt ON rm.type_id = rt.type_id " +
-                     "WHERE YEAR(ci.checkin_time) = ? AND MONTH(ci.checkin_time) = ? " +
-                     "GROUP BY rt.type_name";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, year);
-            ps.setInt(2, month);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(new Object[]{rs.getString("type_name"), rs.getInt("count")});
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return list;
-    }
 
     public List<Object[]> getRoomTypeBookedForMonth(int year, int month) {
         List<Object[]> list = new ArrayList<>();

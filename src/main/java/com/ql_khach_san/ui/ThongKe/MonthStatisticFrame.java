@@ -14,22 +14,14 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Calendar;
 
 public class MonthStatisticFrame extends JFrame {
     private StatisticService service = new StatisticService();
     private ChartPanel chartPanel;
-    private JPanel kpiPanel;
-    private JLabel lblBooked, lblUsed, lblDelta;
-    private ChartPanel pieRoomPanel;
     private ChartPanel pieRoomBookedPanel;
     private ChartPanel pieServicePanel;
     private DefaultTableModel tableModel;
-    
-    // Cache to avoid redundant queries (year -> daily list)
-    private Map<Integer, List<String[]>> dataCache = new HashMap<>();
 
     public MonthStatisticFrame() {
         setTitle("Thống kê theo tháng");
@@ -57,12 +49,8 @@ public class MonthStatisticFrame extends JFrame {
 
         // Chart panels
         chartPanel = new ChartPanel(ChartFactory.createBarChart("Doanh thu theo ngày trong tháng", "Ngày", "Doanh thu", revenueDataset));
-        chartPanel.setPreferredSize(new Dimension(575, 190));
+        chartPanel.setPreferredSize(new Dimension(1180, 240));
         formatChart(chartPanel);
-
-        // KPI tiles panel (Booked / Used / Delta) replacing room-usage chart
-        kpiPanel = createKpiPanel();
-        kpiPanel.setPreferredSize(new Dimension(575, 190));
 
         pieRoomBookedPanel = new ChartPanel(ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false));
         pieRoomBookedPanel.setPreferredSize(new Dimension(575, 190));
@@ -70,11 +58,12 @@ public class MonthStatisticFrame extends JFrame {
         pieServicePanel = new ChartPanel(ChartFactory.createPieChart("Tỉ lệ dịch vụ được sử dụng", pieServiceDataset, true, true, false));
         pieServicePanel.setPreferredSize(new Dimension(575, 190));
 
-        JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        chartsPanel.add(chartPanel);
-        chartsPanel.add(kpiPanel);
-        chartsPanel.add(pieRoomBookedPanel);
-        chartsPanel.add(pieServicePanel);
+        JPanel chartsPanel = new JPanel(new BorderLayout(5,5));
+        chartsPanel.add(chartPanel, BorderLayout.NORTH);
+        JPanel lower = new JPanel(new GridLayout(1,2,5,5));
+        lower.add(pieRoomBookedPanel);
+        lower.add(pieServicePanel);
+        chartsPanel.add(lower, BorderLayout.CENTER);
 
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
@@ -108,40 +97,9 @@ public class MonthStatisticFrame extends JFrame {
         }
     }
 
-    private JPanel createKpiPanel() {
-        JPanel p = new JPanel(new GridLayout(1, 3, 5, 5));
 
-        lblBooked = new JLabel("0", SwingConstants.CENTER);
-        lblBooked.setFont(lblBooked.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        JLabel descBooked = new JLabel("Đặt (Booked)", SwingConstants.CENTER);
-        JPanel tile1 = new JPanel(new BorderLayout());
-        tile1.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        tile1.add(lblBooked, BorderLayout.CENTER);
-        tile1.add(descBooked, BorderLayout.SOUTH);
 
-        lblUsed = new JLabel("0", SwingConstants.CENTER);
-        lblUsed.setFont(lblUsed.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        JLabel descUsed = new JLabel("Sử dụng (Used)", SwingConstants.CENTER);
-        JPanel tile2 = new JPanel(new BorderLayout());
-        tile2.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        tile2.add(lblUsed, BorderLayout.CENTER);
-        tile2.add(descUsed, BorderLayout.SOUTH);
 
-        lblDelta = new JLabel("0", SwingConstants.CENTER);
-        lblDelta.setFont(lblDelta.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        JLabel descDelta = new JLabel("Chênh lệch (Booked - Used)", SwingConstants.CENTER);
-        JPanel tile3 = new JPanel(new BorderLayout());
-        tile3.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        tile3.add(lblDelta, BorderLayout.CENTER);
-        tile3.add(descDelta, BorderLayout.SOUTH);
-
-        p.add(tile1); p.add(tile2); p.add(tile3);
-        return p;
-    }
-
-    private String formatNumber(int n) {
-        try { return new DecimalFormat("#,##0").format(n); } catch (Exception ex) { return String.valueOf(n); }
-    }
     private void loadForMonth(int year, int month) {
         // Clear and populate
         tableModel.setRowCount(0);
@@ -160,30 +118,15 @@ public class MonthStatisticFrame extends JFrame {
         chartPanel.setChart(ChartFactory.createBarChart("Doanh thu theo ngày trong tháng " + String.format("%04d-%02d", year, month), "Ngày", "Doanh thu", dataset));
         formatChart(chartPanel);
 
-        // Compute KPI totals for month
-        int totalUsed = 0;
-        List<Object[]> roomTypeStats = service.getRoomTypeUsageForMonth(year, month);
-        for (Object[] row : roomTypeStats) {
-            int count = 0; try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
-            totalUsed += count;
-        }
-
-        int totalBooked = 0;
+        // Room types booked distribution
         List<Object[]> roomBookedStats = service.getRoomTypeBookedForMonth(year, month);
         DefaultPieDataset pieRoomBooked = new DefaultPieDataset();
         for (Object[] row : roomBookedStats) {
             String type = String.valueOf(row[0]);
             int count = 0; try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
-            totalBooked += count;
             pieRoomBooked.setValue(type, count);
         }
         pieRoomBookedPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBooked, true, true, false));
-
-        lblBooked.setText(formatNumber(totalBooked));
-        lblUsed.setText(formatNumber(totalUsed));
-        int delta = totalBooked - totalUsed;
-        String pct = totalBooked > 0 ? String.format(" (%.0f%%)", (totalUsed * 100.0 / totalBooked)) : "";
-        lblDelta.setText(formatNumber(delta) + pct);
 
         // Service usage in month
         DefaultPieDataset pieService = new DefaultPieDataset();
