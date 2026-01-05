@@ -1,4 +1,4 @@
-package com.ql_khach_san.ui.Qly_Dichvu;
+package com.ql_khach_san.ui.Dichvu;
 
 import com.ql_khach_san.dao.ServiceDAO;
 import com.ql_khach_san.model.Service;
@@ -144,6 +144,7 @@ public class ServicePanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 txtSearch.setText("");
                 loadTable();
+                clearForm();
             }
         });
 
@@ -225,10 +226,21 @@ public class ServicePanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Tên và giá không được để trống", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        // Kiểm tra trùng tên dịch vụ
+        java.util.List<Service> allServices = serviceDAO.getAll();
+        for (Service svc : allServices) {
+            if (svc.getServiceName().equalsIgnoreCase(name)) {
+                JOptionPane.showMessageDialog(this, "Tên dịch vụ đã tồn tại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
         double price;
         try {
-            double tmp = Double.parseDouble(priceText.replaceAll(",", ""));
-            price = (double) ((long) tmp); // remove decimal part by truncation
+            // Loại bỏ mọi ký tự không phải chữ số (dấu ngăn hàng nghìn: "," hoặc "." hoặc khoảng trắng, NBSP...)
+            String digits = priceText.replaceAll("[^0-9]", "");
+            if (digits.isEmpty()) throw new NumberFormatException();
+            long value = Long.parseLong(digits);
+            price = (double) value;
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Giá không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
@@ -261,8 +273,11 @@ public class ServicePanel extends JPanel {
         }
         double price;
         try {
-            double tmp = Double.parseDouble(priceText.replaceAll(",", ""));
-            price = (double) ((long) tmp); // remove decimal part by truncation
+            // Loại bỏ mọi ký tự không phải chữ số (dấu ngăn hàng nghìn: "," hoặc "." hoặc khoảng trắng, NBSP...)
+            String digits = priceText.replaceAll("[^0-9]", "");
+            if (digits.isEmpty()) throw new NumberFormatException();
+            long value = Long.parseLong(digits);
+            price = (double) value;
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Giá không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
@@ -284,6 +299,22 @@ public class ServicePanel extends JPanel {
             return;
         }
         int id = Integer.parseInt(idText);
+        // Kiểm tra dịch vụ có đang được sử dụng không
+        com.ql_khach_san.dao.ServiceUsageDAO usageDAO = new com.ql_khach_san.dao.ServiceUsageDAO();
+        boolean isUsed = false;
+        try {
+            java.sql.Connection conn = com.ql_khach_san.config.DBConnection.getConnection();
+            String sql = "SELECT COUNT(*) FROM service_usage WHERE service_id = ?";
+            java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, id);
+            java.sql.ResultSet rs = ps.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) isUsed = true;
+            rs.close(); ps.close(); conn.close();
+        } catch (Exception ex) { ex.printStackTrace(); }
+        if (isUsed) {
+            JOptionPane.showMessageDialog(this, "Không thể xóa dịch vụ đang được sử dụng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa dịch vụ này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
         boolean ok = serviceDAO.delete(id);
@@ -301,4 +332,6 @@ public class ServicePanel extends JPanel {
         txtName.setText("");
         txtPrice.setText("");
     }
+
+  
 }

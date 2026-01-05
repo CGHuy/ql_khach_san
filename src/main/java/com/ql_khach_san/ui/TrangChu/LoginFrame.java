@@ -1,5 +1,5 @@
 
-package com.ql_khach_san.ui;
+package com.ql_khach_san.ui.TrangChu;
 
 import javax.swing.*;
 import java.awt.*;
@@ -124,7 +124,12 @@ public class LoginFrame extends JFrame {
             return;
         }
         JOptionPane.showMessageDialog(this, "Đăng nhập thành công! Xin chào " + emp.getFullName() + " (" + emp.getRole() + ")");
-        // TODO: Chuyển sang giao diện chính/phân quyền tại đây
+        // Chuyển sang giao diện chính, truyền role
+        java.awt.EventQueue.invokeLater(() -> {
+            MainFrame mainFrame = new MainFrame(emp.getRole());
+            mainFrame.setVisible(true);
+        });
+        this.dispose();
     }
 
     public static void main(String[] args) {

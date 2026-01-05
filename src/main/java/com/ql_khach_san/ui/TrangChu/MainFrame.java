@@ -10,6 +10,7 @@ import com.ql_khach_san.ui.PhanCong.WorkTimeGUI;
 import java.util.Map;
 
 public class MainFrame extends JFrame {
+    private String userRole;
     private JPanel leftPanel;
     private JPanel contentPanel;
     private JPanel roomPanel;
@@ -26,6 +27,11 @@ public class MainFrame extends JFrame {
     private static final Color COLOR_CLEANING = new Color(0, 100, 255);      // Phòng Đang Dọn Dẹp
 
     public MainFrame() {
+        this(null);
+    }
+
+    public MainFrame(String userRole) {
+        this.userRole = userRole;
         setTitle("Quản Lý Khách Sạn");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1400, 800);
@@ -82,8 +88,11 @@ public class MainFrame extends JFrame {
         panel.setBorder(new EmptyBorder(30, 10, 10, 10));
         
         String[] menuItems = {"Phòng", "Loại Phòng", "Dịch Vụ", "Khách Hàng", "Nhân Viên", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"};
-        
         for (String item : menuItems) {
+            // Nếu là nhân viên thì ẩn mục "Nhân Viên"
+            if ("Nhân Viên".equals(item) && userRole != null && userRole.equalsIgnoreCase("Nhân viên")) {
+                continue;
+            }
             JButton button = new JButton(item);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
             button.setMaximumSize(new Dimension(180, 50));
@@ -93,7 +102,7 @@ public class MainFrame extends JFrame {
             button.setBorder(BorderFactory.createLineBorder(new Color(150, 120, 120), 1));
             button.setFocusPainted(false);
             button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
+
             button.addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseEntered(java.awt.event.MouseEvent evt) {
                     button.setBackground(new Color(180, 160, 160));
@@ -102,12 +111,23 @@ public class MainFrame extends JFrame {
                     button.setBackground(new Color(200, 180, 180));
                 }
             });
-            
+
             // Thêm action listener cho nút "Thời Gian"
             if (item.equals("Thời Gian")) {
                 button.addActionListener(e -> new WorkTimeGUI());
             }
-            
+            // Thêm action listener cho nút "Dịch Vụ"
+            if (item.equals("Dịch Vụ")) {
+                button.addActionListener(e -> {
+                    JFrame f = new JFrame("Quản lý Dịch vụ");
+                    f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    f.setContentPane(new com.ql_khach_san.ui.Dichvu.ServicePanel());
+                    f.setSize(900, 500);
+                    f.setLocationRelativeTo(MainFrame.this);
+                    f.setVisible(true);
+                });
+            }
+
             panel.add(button);
             panel.add(Box.createVerticalStrut(12));
         }
