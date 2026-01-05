@@ -36,147 +36,191 @@ public class ReservationHistoryDialog extends JDialog {
         this.customerName = customerName;
         initComponents();
         loadData();
-        setSize(700, 500);
-        setLocationRelativeTo(owner);
+        setPreferredSize(new Dimension(680, 600));
+        pack();
+        setLocationRelativeTo(null);
     }
 
     private void initComponents() {
-        JPanel mainPanel = new JPanel(null);
-        mainPanel.setBackground(new Color(255, 182, 193));
+        // Main with padding
+        JPanel mainPanel = new JPanel(new BorderLayout(12, 12));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        mainPanel.setBackground(Color.WHITE);
 
-        // Title
-        JLabel lblTitle = new JLabel("Chi tiết lịch sử đặt phòng", JLabel.CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 16));
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(33, 150, 243));
+        header.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        JLabel lblTitle = new JLabel("Lịch sử đặt phòng", JLabel.LEFT);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblTitle.setForeground(Color.WHITE);
-        lblTitle.setBounds(0, 10, 700, 30);
-        mainPanel.add(lblTitle);
+        header.add(lblTitle, BorderLayout.WEST);
+        mainPanel.add(header, BorderLayout.NORTH);
 
-        // Info Panel
-        int y = 60;
-        int labelWidth = 150;
-        int valueWidth = 520;
+        // Content panel
+        JPanel content = new JPanel(new GridBagLayout());
+        content.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.anchor = GridBagConstraints.WEST;
 
-        // Khách hàng
-        JLabel lbl1 = new JLabel("Khách hàng:");
-        lbl1.setForeground(Color.WHITE);
-        lbl1.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl1);
+        Font labelFont = new Font("Segoe UI", Font.PLAIN, 13);
+        Font valueFont = new Font("Segoe UI", Font.PLAIN, 13);
+
+        int row = 0;
+
+        // Helper to add row: label + value
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        JLabel l1 = new JLabel("Khách hàng:");
+        l1.setFont(labelFont);
+        content.add(l1, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblCustomerName = new JLabel(customerName);
-        lblCustomerName.setBounds(180, y, valueWidth, 25);
-        lblCustomerName.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblCustomerName);
-        y += 40;
+        lblCustomerName.setFont(valueFont);
+        lblCustomerName.setOpaque(true);
+        lblCustomerName.setBackground(new Color(250, 250, 250));
+        lblCustomerName.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblCustomerName, gbc);
+        row++;
 
-        // Số phòng
-        JLabel lbl2 = new JLabel("Số phòng:");
-        lbl2.setForeground(Color.WHITE);
-        lbl2.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl2);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l2 = new JLabel("Số phòng:");
+        l2.setFont(labelFont);
+        content.add(l2, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblRoomNumber = new JLabel("");
-        lblRoomNumber.setBounds(180, y, valueWidth, 25);
-        lblRoomNumber.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblRoomNumber);
-        y += 40;
+        lblRoomNumber.setFont(valueFont);
+        lblRoomNumber.setOpaque(true);
+        lblRoomNumber.setBackground(new Color(250, 250, 250));
+        lblRoomNumber.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblRoomNumber, gbc);
+        row++;
 
-        // Loại phòng
-        JLabel lbl3 = new JLabel("Loại phòng:");
-        lbl3.setForeground(Color.WHITE);
-        lbl3.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl3);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l3 = new JLabel("Loại phòng:");
+        l3.setFont(labelFont);
+        content.add(l3, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblRoomType = new JLabel("");
-        lblRoomType.setBounds(180, y, valueWidth, 25);
-        lblRoomType.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblRoomType);
-        y += 40;
+        lblRoomType.setFont(valueFont);
+        lblRoomType.setOpaque(true);
+        lblRoomType.setBackground(new Color(250, 250, 250));
+        lblRoomType.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblRoomType, gbc);
+        row++;
 
-        // Ngày đặt
-        JLabel lbl4 = new JLabel("Ngày đặt:");
-        lbl4.setForeground(Color.WHITE);
-        lbl4.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl4);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l4 = new JLabel("Ngày đặt:");
+        l4.setFont(labelFont);
+        content.add(l4, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblBookingDate = new JLabel("");
-        lblBookingDate.setBounds(180, y, valueWidth, 25);
-        lblBookingDate.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblBookingDate);
-        y += 40;
+        lblBookingDate.setFont(valueFont);
+        lblBookingDate.setOpaque(true);
+        lblBookingDate.setBackground(new Color(250, 250, 250));
+        lblBookingDate.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblBookingDate, gbc);
+        row++;
 
-        // Ngày check-in dự kiến
-        JLabel lbl5 = new JLabel("Check-in dự kiến:");
-        lbl5.setForeground(Color.WHITE);
-        lbl5.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl5);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l5 = new JLabel("Check-in dự kiến:");
+        l5.setFont(labelFont);
+        content.add(l5, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblCheckinExpected = new JLabel("");
-        lblCheckinExpected.setBounds(180, y, valueWidth, 25);
-        lblCheckinExpected.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblCheckinExpected);
-        y += 40;
+        lblCheckinExpected.setFont(valueFont);
+        lblCheckinExpected.setOpaque(true);
+        lblCheckinExpected.setBackground(new Color(250, 250, 250));
+        lblCheckinExpected.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblCheckinExpected, gbc);
+        row++;
 
-        // Ngày check-out dự kiến
-        JLabel lbl6 = new JLabel("Check-out dự kiến:");
-        lbl6.setForeground(Color.WHITE);
-        lbl6.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl6);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l6 = new JLabel("Check-out dự kiến:");
+        l6.setFont(labelFont);
+        content.add(l6, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblCheckoutExpected = new JLabel("");
-        lblCheckoutExpected.setBounds(180, y, valueWidth, 25);
-        lblCheckoutExpected.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblCheckoutExpected);
-        y += 40;
+        lblCheckoutExpected.setFont(valueFont);
+        lblCheckoutExpected.setOpaque(true);
+        lblCheckoutExpected.setBackground(new Color(250, 250, 250));
+        lblCheckoutExpected.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblCheckoutExpected, gbc);
+        row++;
 
-        // Trạng thái
-        JLabel lbl7 = new JLabel("Trạng thái:");
-        lbl7.setForeground(Color.WHITE);
-        lbl7.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl7);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l7 = new JLabel("Trạng thái:");
+        l7.setFont(labelFont);
+        content.add(l7, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblStatus = new JLabel("");
-        lblStatus.setBounds(180, y, valueWidth, 25);
-        lblStatus.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblStatus);
-        y += 40;
+        lblStatus.setFont(valueFont);
+        lblStatus.setOpaque(true);
+        lblStatus.setBackground(new Color(250, 250, 250));
+        lblStatus.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblStatus, gbc);
+        row++;
 
-        // Check-in thực tế
-        JLabel lbl8 = new JLabel("Check-in thực tế:");
-        lbl8.setForeground(Color.WHITE);
-        lbl8.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl8);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l8 = new JLabel("Check-in thực tế:");
+        l8.setFont(labelFont);
+        content.add(l8, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblCheckinActual = new JLabel("");
-        lblCheckinActual.setBounds(180, y, valueWidth, 25);
-        lblCheckinActual.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblCheckinActual);
-        y += 40;
+        lblCheckinActual.setFont(valueFont);
+        lblCheckinActual.setOpaque(true);
+        lblCheckinActual.setBackground(new Color(250, 250, 250));
+        lblCheckinActual.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblCheckinActual, gbc);
+        row++;
 
-        // Check-out thực tế
-        JLabel lbl9 = new JLabel("Check-out thực tế:");
-        lbl9.setForeground(Color.WHITE);
-        lbl9.setBounds(20, y, labelWidth, 25);
-        mainPanel.add(lbl9);
+        gbc.gridx = 0; gbc.gridy = row; gbc.fill = GridBagConstraints.NONE;
+        JLabel l9 = new JLabel("Check-out thực tế:");
+        l9.setFont(labelFont);
+        content.add(l9, gbc);
+
+        gbc.gridx = 1; gbc.gridy = row; gbc.fill = GridBagConstraints.HORIZONTAL;
         lblCheckoutActual = new JLabel("");
-        lblCheckoutActual.setBounds(180, y, valueWidth, 25);
-        lblCheckoutActual.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        mainPanel.add(lblCheckoutActual);
+        lblCheckoutActual.setFont(valueFont);
+        lblCheckoutActual.setOpaque(true);
+        lblCheckoutActual.setBackground(new Color(250, 250, 250));
+        lblCheckoutActual.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,220,220)), BorderFactory.createEmptyBorder(6,8,6,8)));
+        content.add(lblCheckoutActual, gbc);
 
-        // Bottom panel with navigation
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        bottomPanel.setBackground(new Color(255, 182, 193));
+        mainPanel.add(content, BorderLayout.CENTER);
+
+        // Bottom panel with navigation buttons
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
+        bottomPanel.setBackground(Color.WHITE);
 
         btnPrevious = new JButton("< Trước");
+        btnPrevious.setPreferredSize(new Dimension(110, 34));
         btnPrevious.addActionListener(e -> previousReservation());
         bottomPanel.add(btnPrevious);
 
         lblPageInfo = new JLabel("");
-        lblPageInfo.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblPageInfo.setForeground(Color.WHITE);
+        lblPageInfo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         bottomPanel.add(lblPageInfo);
 
         btnNext = new JButton("Tiếp theo >");
+        btnNext.setPreferredSize(new Dimension(110, 34));
         btnNext.addActionListener(e -> nextReservation());
         bottomPanel.add(btnNext);
 
         btnClose = new JButton("Đóng");
+        btnClose.setPreferredSize(new Dimension(100, 34));
         btnClose.addActionListener(e -> dispose());
         bottomPanel.add(btnClose);
 
-        mainPanel.add(bottomPanel);
-        bottomPanel.setBounds(0, 430, 700, 70);
+        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
     }
