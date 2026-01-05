@@ -34,14 +34,20 @@ public class MainFrame extends JFrame {
     
     // UI Components
     private final String userRole;
+    private final int employeeId;
     private JScrollPane scrollPane;
 
     public MainFrame() {
-        this(null);
+        this(null, -1);
     }
 
     public MainFrame(String userRole) {
+        this(userRole, -1);
+    }
+
+    public MainFrame(String userRole, int employeeId) {
         this.userRole = userRole;
+        this.employeeId = employeeId;
         initFrame();
         initComponents();
         refreshRoomPanel();
@@ -355,7 +361,7 @@ public class MainFrame extends JFrame {
     
     private JMenuItem createDetailItem(RoomView room) {
         JMenuItem item = new JMenuItem("Chi tiết");
-        item.addActionListener(e -> new DialogChiTiet(this, room).setVisible(true));
+        item.addActionListener(e -> new DialogChiTiet(this, room, employeeId).setVisible(true));
         return item;
     }
     

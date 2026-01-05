@@ -34,20 +34,33 @@ public class DialogChiTiet extends JDialog {
     private final CheckinDAO checkinDAO = new CheckinDAO();
     private final ServiceDAO serviceDAO = new ServiceDAO();
     private final ServiceUsageDAO serviceUsageDAO = new ServiceUsageDAO();
+    private final InvoiceDAO invoiceDAO = new InvoiceDAO();
+    private final RoomService roomService = new RoomService();
     
     // UI Components
     private final RoomView roomView;
+    private final MainFrame mainFrame;
     private JLabel lblRoomNumber, lblKhachHang, lblNgayTraPhong, lblGiaPhongTheoNgay, lblTotal, lblTotalService;
     private JTable tableChiTiet, tableDichVuDaChon, tableDichVuSanCo;
     private DefaultTableModel availableServiceModel, addedServiceModel;
     private int currentCheckinId = -1;
+    // Payment labels
+    private JLabel lblTotalRoomPayment, lblTotalServicePayment, lblTotalPayment;
+    private JButton btnThanhToan;
+    private int employeeId = -1;
 
     public DialogChiTiet(Frame parent, RoomView roomView) {
+        this(parent, roomView, -1);
+    }
+
+    public DialogChiTiet(Frame parent, RoomView roomView, int employeeId) {
         super(parent, "Chi Tiết Phòng", true);
         this.roomView = roomView;
+        this.mainFrame = (MainFrame) parent;
+        this.employeeId = employeeId;
         initComponents();
         loadData();
-        setSize(1080, 720);
+        setSize(1300, 700);
         setLocationRelativeTo(null);
     }
 
@@ -255,19 +268,49 @@ public class DialogChiTiet extends JDialog {
     private JPanel createPanelThanhToan() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(createPanelHeader("Thanh Toán"), BorderLayout.NORTH);
-        
+
         JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBorder(BorderFactory.createLineBorder(BLUE_COLOR, 2));
+
+        lblTotalRoomPayment = new JLabel("Tổng Tiền Phòng: 0 (VNĐ)");
+        lblTotalRoomPayment.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTotalRoomPayment.setForeground(Color.BLACK);
+        lblTotalRoomPayment.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(lblTotalRoomPayment);
+
+        lblTotalServicePayment = new JLabel("Tổng Tiền Dịch Vụ: 0 (VNĐ)");
+        lblTotalServicePayment.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTotalServicePayment.setForeground(Color.BLACK);
+        lblTotalServicePayment.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(Box.createVerticalStrut(10));
+        contentPanel.add(lblTotalServicePayment);
+
+        lblTotalPayment = new JLabel("Tổng Tiền Phải Thanh Toán: 0 (VNĐ)");
+        lblTotalPayment.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTotalPayment.setForeground(Color.RED);
+        lblTotalPayment.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(lblTotalPayment);
+
+        btnThanhToan = new JButton("Thanh Toán");
+        btnThanhToan.setFont(new Font("Arial", Font.BOLD, 15));
+        btnThanhToan.setBackground(BLUE_COLOR);
+        btnThanhToan.setForeground(Color.WHITE);
+        btnThanhToan.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnThanhToan.addActionListener(e -> handlePayment());
+        contentPanel.add(Box.createVerticalStrut(30));
+        contentPanel.add(btnThanhToan);
+
         panel.add(contentPanel, BorderLayout.CENTER);
-        
         return panel;
     }
     
-    // Helper methods for UI
     private JLabel createPanelHeader(String title) {
         JLabel label = new JLabel(title, SwingConstants.CENTER);
-        label.setFont(new Font("Arial", Font.BOLD, 14));
+        label.setFont(new Font("Arial", Font.BOLD, 18));
         label.setForeground(Color.WHITE);
         label.setOpaque(true);
         label.setBackground(BLUE_COLOR);
@@ -330,7 +373,7 @@ public class DialogChiTiet extends JDialog {
     private void loadData() {
         if (roomView == null) return;
         
-        lblRoomNumber.setText("Phòng " + roomView.getRoomNumber());
+        lblRoomNumber.setText("PHÒNG " + roomView.getRoomNumber());
         
         currentCheckinId = -1;
         int resId = roomView.getReservationId();
@@ -344,6 +387,42 @@ public class DialogChiTiet extends JDialog {
         loadRoomDetails();
         loadAvailableServices();
         loadServiceUsages();
+        loadPaymentData();
+    }
+
+    // Hàm load dữ liệu thanh toán
+    private void loadPaymentData() {
+        double totalRoom = 0;
+        String giaPhongStr = getRoomPrice();
+        int tongNgay = calculateTotalDays();
+        try {
+            double giaPhong = Double.parseDouble(giaPhongStr);
+            totalRoom = giaPhong * tongNgay;
+        } catch (Exception e) {
+            totalRoom = 0;
+        }
+
+        // Tổng tiền dịch vụ
+        double totalService = 0;
+        if (addedServiceModel != null) {
+            for (int i = 0; i < addedServiceModel.getRowCount(); i++) {
+                try {
+                    String totalStr = String.valueOf(addedServiceModel.getValueAt(i, 4));
+                    totalService += Double.parseDouble(totalStr);
+                } catch (NumberFormatException e) {
+                    // Bỏ qua nếu không parse được
+                }
+            }
+        }
+
+        double totalPayment = totalRoom + totalService;
+
+        if (lblTotalRoomPayment != null)
+            lblTotalRoomPayment.setText("Tổng Tiền Phòng: " + String.format("%.0f", totalRoom) + " (VNĐ)");
+        if (lblTotalServicePayment != null)
+            lblTotalServicePayment.setText("Tổng Tiền Dịch Vụ: " + String.format("%.0f", totalService) + " (VNĐ)");
+        if (lblTotalPayment != null)
+            lblTotalPayment.setText("Tổng Tiền Phải Thanh Toán: " + String.format("%.0f", totalPayment) + " (VNĐ)");
     }
     
     private void loadRoomDetails() {
@@ -370,7 +449,14 @@ public class DialogChiTiet extends JDialog {
             }
         };
 
-        setChiTietThuePhong(khachHang, ngayTra, gia, tableData, gia + " (VNĐ)");
+        lblKhachHang.setText("Khách Hàng: " + khachHang);
+        lblNgayTraPhong.setText("Ngày Trả Phòng: " + ngayTra);
+        lblGiaPhongTheoNgay.setText("Giá Phòng Theo Ngày: " + gia + " (VNĐ)");
+        lblTotal.setText("Tổng Tiền Phòng: " + gia + " (VNĐ)");
+        
+        if (tableData != null && tableData.length > 0) {
+            tableChiTiet.setModel(new DefaultTableModel(tableData, ROOM_DETAIL_COLUMNS));
+        }
     }
     
     private String getCustomerName(int customerId) {
@@ -435,7 +521,6 @@ public class DialogChiTiet extends JDialog {
         }
 
         addedServiceModel.setRowCount(0);
-        double totalService = 0;
         
         for (ServiceUsage su : serviceUsageDAO.getByCheckinId(currentCheckinId)) {
             Service s = serviceDAO.getById(su.getServiceId());
@@ -444,7 +529,6 @@ public class DialogChiTiet extends JDialog {
             double price = s.getPrice();
             int qty = su.getQuantity();
             double total = price * qty;
-            totalService += total;
             
             addedServiceModel.addRow(new Object[]{
                 s.getServiceName(), 
@@ -474,7 +558,6 @@ public class DialogChiTiet extends JDialog {
         lblTotalService.setText("Tổng Tiền Dịch Vụ: " + String.format("%.0f", total) + " (VNĐ)");
     }
     
-    // Service actions
     private void addSelectedService() {
         int selectedRow = tableDichVuSanCo.getSelectedRow();
         if (selectedRow < 0) return;
@@ -494,6 +577,7 @@ public class DialogChiTiet extends JDialog {
             
             ServiceUsage su = new ServiceUsage(0, currentCheckinId, serviceId, quantity, LocalDateTime.now());
             if (serviceUsageDAO.insert(su)) {
+                showMessage("Thêm dịch vụ thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                 loadServiceUsages();
             } else {
                 showMessage("Thêm dịch vụ thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -552,15 +636,87 @@ public class DialogChiTiet extends JDialog {
     private void showMessage(String message, String title, int messageType) {
         JOptionPane.showMessageDialog(this, message, title, messageType);
     }
-    
-    public void setChiTietThuePhong(String khachHang, String ngayTra, String gia, Object[][] tableData, String total) {
-        lblKhachHang.setText("Khách Hàng: " + khachHang);
-        lblNgayTraPhong.setText("Ngày Trả Phòng: " + ngayTra);
-        lblGiaPhongTheoNgay.setText("Giá Phòng Theo Ngày: " + gia + " (VNĐ)");
-        lblTotal.setText("Tổng Tiền Phòng: " + total);
-        
-        if (tableData != null && tableData.length > 0) {
-            tableChiTiet.setModel(new DefaultTableModel(tableData, ROOM_DETAIL_COLUMNS));
+
+    private void handlePayment() {
+        if (currentCheckinId <= 0) {
+            showMessage("Không tìm thấy check-in cho phòng này.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Khách hàng đã thanh toán?",
+            "Xác nhận thanh toán",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            // Lấy dữ liệu cần thiết
+            Checkin checkin = checkinDAO.getById(currentCheckinId);
+            if (checkin == null) {
+                showMessage("Không tìm thấy thông tin check-in.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int resId = roomView.getReservationId();
+            Reservation res = reservationDAO.getById(resId);
+            if (res == null) {
+                showMessage("Không tìm thấy thông tin đặt phòng.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Tính tiền phòng + dịch vụ + tổng tiền
+            double totalRoom = 0;
+            String giaPhongStr = getRoomPrice();
+            int tongNgay = calculateTotalDays();
+            try {
+                double giaPhong = Double.parseDouble(giaPhongStr);
+                totalRoom = giaPhong * tongNgay;
+            } catch (Exception e) {
+                showMessage("Lỗi khi tính tổng tiền phòng.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            double totalService = 0;
+            if (addedServiceModel != null) {
+                for (int i = 0; i < addedServiceModel.getRowCount(); i++) {
+                    try {
+                        String totalStr = String.valueOf(addedServiceModel.getValueAt(i, 4));
+                        totalService += Double.parseDouble(totalStr);
+                    } catch (NumberFormatException e) {
+                        showMessage("Lỗi khi tính tổng tiền dịch vụ.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+            }
+
+            double totalPayment = totalRoom + totalService;
+
+            try {
+                String ngayTraText = lblNgayTraPhong.getText().replace("Ngày Trả Phòng: ", "").trim();
+                LocalDateTime checkoutTime = LocalDateTime.parse(ngayTraText, DATE_FORMATTER);
+                checkinDAO.checkout(currentCheckinId, checkoutTime);
+            } catch (Exception e) {
+                showMessage("Lỗi khi cập nhật thời gian trả phòng: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Tạo hóa đơn
+            Invoice invoice = new Invoice(0, currentCheckinId, employeeId, totalRoom, totalService, totalPayment, LocalDateTime.now());
+            if (invoiceDAO.insert(invoice)) {
+                roomService.checkOutRoom(roomView.getRoomId());
+
+                showMessage("Thanh toán thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                mainFrame.refreshRoomPanel();
+                this.dispose();
+            } else {
+                showMessage("Lỗi khi lưu hóa đơn vào cơ sở dữ liệu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            showMessage("Có lỗi xảy ra: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 }

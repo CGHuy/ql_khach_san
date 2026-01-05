@@ -1,4 +1,3 @@
-
 package com.ql_khach_san.main;
 
 import javax.swing.*;
@@ -125,9 +124,9 @@ public class LoginFrame extends JFrame {
             return;
         }
         JOptionPane.showMessageDialog(this, "Đăng nhập thành công! Xin chào " + emp.getFullName() + " (" + emp.getRole() + ")");
-        // Chuyển sang giao diện chính, truyền role
+        // Chuyển sang giao diện chính, truyền role và employeeId
         java.awt.EventQueue.invokeLater(() -> {
-            MainFrame mainFrame = new MainFrame(emp.getRole());
+            MainFrame mainFrame = new MainFrame(emp.getRole(), emp.getEmployeeId());
             mainFrame.setVisible(true);
         });
         this.dispose();
