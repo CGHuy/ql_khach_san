@@ -130,6 +130,36 @@ public class MainFrame extends JFrame {
                 });
             }
 
+            // Thêm action listener cho nút "Khách Hàng"
+            if (item.equals("Khách Hàng")) {
+                button.addActionListener(e -> {
+                    // Mở form quản lý khách hàng (KhachHang.GUI)
+                    com.ql_khach_san.ui.KhachHang.GUI customerGui = new com.ql_khach_san.ui.KhachHang.GUI();
+                    customerGui.setVisible(true);
+                });
+            }
+
+            // Thêm action listener cho nút "Nhân Viên"
+            if (item.equals("Nhân Viên")) {
+                button.addActionListener(e -> {
+                    // Mở form quản lý nhân viên (NhanVienGUI)
+                    com.ql_khach_san.ui.NhanVien.NhanVienGUI staffGui = new com.ql_khach_san.ui.NhanVien.NhanVienGUI();
+                    staffGui.setVisible(true);
+                });
+            }
+
+            // Thêm action listener cho nút "Thống Kê"
+            if (item.equals("Thống Kê")) {
+                button.addActionListener(e -> {
+                    JFrame f = new JFrame("Thống kê");
+                    f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    f.setContentPane(new com.ql_khach_san.ui.ThongKe.StatisticPanel());
+                    f.setSize(1000, 700);
+                    f.setLocationRelativeTo(MainFrame.this);
+                    f.setVisible(true);
+                });
+            }
+
             // Thêm action listener cho nút "Thời Gian"
             if (item.equals("Thời Gian")) {
                 button.addActionListener(e -> new WorkTimeGUI());

@@ -25,7 +25,7 @@ public class GUI extends JFrame {
         setPreferredSize(new Dimension(1200, 700));
         pack();
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
     private void initComponents() {

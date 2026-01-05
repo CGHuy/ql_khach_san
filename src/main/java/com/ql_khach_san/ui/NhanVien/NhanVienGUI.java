@@ -30,7 +30,7 @@ public class NhanVienGUI extends JFrame {
         setPreferredSize(new Dimension(1200, 700));
         pack();
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
     // ================= INIT UI =================
@@ -85,7 +85,7 @@ public class NhanVienGUI extends JFrame {
 
         // Row 1: Fullname and Password
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
-        JLabel lblFullName = new JLabel("Họ và tên:"); lblFullName.setFont(labelFont);
+        JLabel lblFullName = new JLabel("Vị trí công việc:"); lblFullName.setFont(labelFont);
         formPanel.add(lblFullName, gbc);
 
         gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -104,7 +104,7 @@ public class NhanVienGUI extends JFrame {
 
         // Row 2: Role and Search
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
-        JLabel lblRole = new JLabel("Vai trò:"); lblRole.setFont(labelFont);
+        JLabel lblRole = new JLabel("Quyền:"); lblRole.setFont(labelFont);
         formPanel.add(lblRole, gbc);
 
         gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.35; gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -132,7 +132,7 @@ public class NhanVienGUI extends JFrame {
         searchPanel.add(lblTimKiem); searchPanel.add(txtTimKiem);
 
         // Table
-        String[] columnNames = {"ID", "Username", "Password", "Họ và tên", "Role"};
+        String[] columnNames = {"ID", "Username", "Password", "Vị trí công việc", "Quyền"};
         tableModel = new DefaultTableModel(columnNames, 0) { public boolean isCellEditable(int r, int c) { return false; } };
         table = new JTable(tableModel);
         table.setFillsViewportHeight(true);
