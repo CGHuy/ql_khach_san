@@ -3,8 +3,10 @@ package com.ql_khach_san.ui.TrangChu;
 import com.ql_khach_san.dao.*;
 import com.ql_khach_san.model.*;
 import javax.swing.*;
-import javax.swing.border.Border;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -16,6 +18,8 @@ public class DialogChiTiet extends JDialog {
     private ReservationDAO reservationDAO = new ReservationDAO();
     private CustomerDAO customerDAO = new CustomerDAO();
     private CheckinDAO checkinDAO = new CheckinDAO();
+    private ServiceDAO serviceDAO = new ServiceDAO();
+    private ServiceUsageDAO serviceUsageDAO = new ServiceUsageDAO();
     
     private JLabel lblRoomNumber;
     private JPanel panelChiTietThuePhong;
@@ -24,6 +28,11 @@ public class DialogChiTiet extends JDialog {
     
     private JLabel lblKhachHang, lblNgayTraPhong, lblGiaPhongTheoNgay, lblTotal;
     private JTable tableChiTiet;
+    private JTable tableDichVuDaChon;
+    private JTable tableDichVuSanCo;
+    private DefaultTableModel availableServiceModel;
+    private DefaultTableModel addedServiceModel;
+    private int currentCheckinId = -1;
 
     public DialogChiTiet(Frame parent, RoomView roomView) {
         super(parent, "Chi Tiết Phòng", true);
@@ -97,9 +106,9 @@ public class DialogChiTiet extends JDialog {
         infoPanel.setBackground(Color.WHITE);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        lblKhachHang = new JLabel("Khách Hàng: Quang Hưng");
-        lblNgayTraPhong = new JLabel("Ngày Trả Phòng: 10-12-2021 23:23:01 PM");
-        lblGiaPhongTheoNgay = new JLabel("Giá Phòng Theo Ngày: 200 (VNĐ)");
+        lblKhachHang = new JLabel("Khách Hàng: ");
+        lblNgayTraPhong = new JLabel("Ngày Trả Phòng: ");
+        lblGiaPhongTheoNgay = new JLabel("Giá Phòng Theo Ngày: ");
         lblGiaPhongTheoNgay.setForeground(Color.RED);
         
         infoPanel.add(lblKhachHang);
@@ -120,12 +129,7 @@ public class DialogChiTiet extends JDialog {
         // Bảng chi tiết
         String[] columns = {"Phòng", "Ngày Đặt", "Ngày Nhận Phòng", "Ngày Trả Phòng Dự Kiến", 
                            "Ngày Trả Phòng", "Tổng Thời Gian", "Tiền Phòng"};
-        Object[][] data = {
-            {"115", "10-12-2021 23:22:10", "10-12-2021 23:22:10", "12-12-2021 23:22:10", 
-             "10-12-2021 23:23:01", "1 (Ngày)", "200(VNĐ)"}
-        };
-        
-        tableChiTiet = new JTable(data, columns);
+        tableChiTiet = new JTable(new javax.swing.table.DefaultTableModel(columns, 0));
         tableChiTiet.setRowHeight(25);
         tableChiTiet.getTableHeader().setBackground(new Color(128, 0, 128));
         tableChiTiet.getTableHeader().setForeground(Color.WHITE);
@@ -157,6 +161,63 @@ public class DialogChiTiet extends JDialog {
         
         return panel;
     }
+
+    private void addSelectedService() {
+        int selectedRow = tableDichVuSanCo.getSelectedRow();
+        if (selectedRow < 0) {
+            return;
+        }
+
+        if (currentCheckinId <= 0) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy check-in cho phòng này.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = tableDichVuSanCo.convertRowIndexToModel(selectedRow);
+        DefaultTableModel availableModel = (DefaultTableModel) tableDichVuSanCo.getModel();
+
+        String tenDv = String.valueOf(availableModel.getValueAt(modelRow, 0));
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        Object giaObj = availableModel.getValueAt(modelRow, 1);
+        Object idObj = availableModel.getValueAt(modelRow, 2);
+
+        int serviceId;
+        double gia;
+        try {
+            serviceId = Integer.parseInt(String.valueOf(idObj));
+            gia = Double.parseDouble(String.valueOf(giaObj));
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Dữ liệu dịch vụ không hợp lệ.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String input = JOptionPane.showInputDialog(this, "Nhập số lượng", "1");
+        if (input == null) {
+            return; // user cancelled
+        }
+
+        int soLuong;
+        try {
+            soLuong = Integer.parseInt(input.trim());
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Số lượng không hợp lệ.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (soLuong <= 0) {
+            JOptionPane.showMessageDialog(this, "Số lượng phải lớn hơn 0.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        ServiceUsage su = new ServiceUsage(0, currentCheckinId, serviceId, soLuong, LocalDateTime.now());
+        boolean ok = serviceUsageDAO.insert(su);
+        if (!ok) {
+            JOptionPane.showMessageDialog(this, "Thêm dịch vụ thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        loadServiceUsages();
+    }
     
     private JPanel createPanelChiTietDichVu() {
         JPanel panel = new JPanel();
@@ -172,9 +233,148 @@ public class DialogChiTiet extends JDialog {
         panel.add(lblTitle, BorderLayout.NORTH);
         
         // Content
-        JPanel contentPanel = new JPanel();
+        JPanel contentPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBorder(BorderFactory.createLineBorder(new Color(128, 0, 128), 2));
+
+        // Panel trái: dịch vụ đã thêm
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBackground(Color.WHITE);
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 5));
+
+        // Tiêu đề bảng
+        JPanel tableTitlePanelLeft = new JPanel();
+        tableTitlePanelLeft.setLayout(new FlowLayout(FlowLayout.LEFT));
+        tableTitlePanelLeft.setBackground(Color.WHITE);
+        tableTitlePanelLeft.setBorder(BorderFactory.createEmptyBorder(0, 10, 5, 10));
+        JLabel lblAddedTitle = new JLabel("Dịch Vụ Đã Thêm");
+        lblAddedTitle.setFont(new Font("Arial", Font.BOLD, 12));
+        tableTitlePanelLeft.add(lblAddedTitle);
+        leftPanel.add(tableTitlePanelLeft, BorderLayout.NORTH);
+        
+        // Bảng dịch vụ đã thêm
+        addedServiceModel = new DefaultTableModel(new String[]{"Dịch Vụ", "Thời gian", "Số Lượng", "Đơn Giá", "Thành Tiền", "ID"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tableDichVuDaChon = new JTable(addedServiceModel);
+        tableDichVuDaChon.setRowHeight(24);
+        tableDichVuDaChon.getTableHeader().setBackground(new Color(128, 0, 128));
+        tableDichVuDaChon.getTableHeader().setForeground(Color.WHITE);
+        tableDichVuDaChon.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
+        tableDichVuDaChon.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+        // Popup menu để xóa dịch vụ
+        JPopupMenu popupDeleteMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Xóa");
+        deleteItem.addActionListener(e -> deleteSelectedServiceUsage());
+        popupDeleteMenu.add(deleteItem);
+        tableDichVuDaChon.addMouseListener(new MouseAdapter() {
+            private void showPopup(MouseEvent e) {
+                int row = tableDichVuDaChon.rowAtPoint(e.getPoint());
+                if (row >= 0) {
+                    tableDichVuDaChon.setRowSelectionInterval(row, row);
+                    popupDeleteMenu.show(tableDichVuDaChon, e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showPopup(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showPopup(e);
+                }
+            }
+        });
+
+        tableDichVuDaChon.removeColumn(tableDichVuDaChon.getColumnModel().getColumn(5)); // Ẩn cột ID
+        JPanel addedTablePanel = new JPanel(new BorderLayout());
+        addedTablePanel.setBackground(Color.WHITE);
+        addedTablePanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        JScrollPane addedScrollPane = new JScrollPane(tableDichVuDaChon);
+        addedScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        addedTablePanel.add(addedScrollPane, BorderLayout.CENTER);
+
+        leftPanel.add(addedTablePanel, BorderLayout.CENTER);
+
+        // Panel phải: danh sách dịch vụ để chọn
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBackground(Color.WHITE);
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));
+
+        // Tiêu đề bảng
+        JPanel tableTitlePanelRight = new JPanel();
+        tableTitlePanelRight.setLayout(new FlowLayout(FlowLayout.LEFT));
+        tableTitlePanelRight.setBackground(Color.WHITE);
+        tableTitlePanelRight.setBorder(BorderFactory.createEmptyBorder(0, 10, 5, 10));
+        JLabel lblAvailableTitle = new JLabel("Dịch Vụ Sẵn Có");
+        tableTitlePanelRight.add(lblAvailableTitle);
+        rightPanel.add(tableTitlePanelRight, BorderLayout.NORTH);
+
+        // Bảng dịch vụ sẵn có
+        availableServiceModel = new DefaultTableModel(new String[]{"Tên Dịch Vụ", "Giá", "ID"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tableDichVuSanCo = new JTable(availableServiceModel);
+        tableDichVuSanCo.setRowHeight(24);
+        tableDichVuSanCo.getTableHeader().setBackground(new Color(128, 0, 128));
+        tableDichVuSanCo.getTableHeader().setForeground(Color.WHITE);
+        tableDichVuSanCo.getTableHeader().setFont(new Font("Arial", Font.BOLD, 11));
+        tableDichVuSanCo.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        tableDichVuSanCo.removeColumn(tableDichVuSanCo.getColumnModel().getColumn(2)); // Ẩn cột ID
+
+        // Popup thêm dịch vụ
+        JPopupMenu popupAddMenu = new JPopupMenu();
+        JMenuItem addItem = new JMenuItem("Thêm");
+        addItem.addActionListener(e -> addSelectedService());
+        popupAddMenu.add(addItem);
+        tableDichVuSanCo.addMouseListener(new MouseAdapter() {
+            private void showPopup(MouseEvent e) {
+                int row = tableDichVuSanCo.rowAtPoint(e.getPoint());
+                if (row >= 0) {
+                    tableDichVuSanCo.setRowSelectionInterval(row, row);
+                    popupAddMenu.show(tableDichVuSanCo, e.getX(), e.getY());
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showPopup(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showPopup(e);
+                }
+            }
+        });
+
+        JPanel availableTablePanel = new JPanel(new BorderLayout());
+        availableTablePanel.setBackground(Color.WHITE);
+        availableTablePanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        JScrollPane availableScrollPane = new JScrollPane(tableDichVuSanCo);
+        availableScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        availableTablePanel.add(availableScrollPane, BorderLayout.CENTER);
+
+        rightPanel.add(availableTablePanel, BorderLayout.CENTER);
+
+        contentPanel.add(leftPanel);
+        contentPanel.add(rightPanel);
+
         panel.add(contentPanel, BorderLayout.CENTER);
         
         return panel;
@@ -202,8 +402,8 @@ public class DialogChiTiet extends JDialog {
         return panel;
     }
     
-   
     private void loadData() {
+        currentCheckinId = -1;
         if (roomView != null) {
             lblRoomNumber.setText("Phòng " + roomView.getRoomNumber());
             
@@ -235,6 +435,7 @@ public class DialogChiTiet extends JDialog {
                     
                     Checkin checkin = checkinDAO.getByReservationId(resId);
                     if (checkin != null && checkin.getCheckinTime() != null) {
+                        currentCheckinId = checkin.getCheckinId();
                         ngayNhanTime = checkin.getCheckinTime();
                         ngayNhan = ngayNhanTime.format(formatter);
                         
@@ -263,11 +464,76 @@ public class DialogChiTiet extends JDialog {
                 }
             }
             
-            // TODO: Load dịch vụ và thanh toán
+            loadAvailableServices();
+            loadServiceUsages();
+            // TODO: Load thanh toán
+        }
+    }
+
+    private void loadAvailableServices() {
+        if (availableServiceModel == null) {
+            return;
+        }
+        availableServiceModel.setRowCount(0);
+        for (Service s : serviceDAO.getAll()) {
+            availableServiceModel.addRow(new Object[]{s.getServiceName(), String.format("%.0f", s.getPrice()), s.getServiceId()});
+        }
+    }
+
+    private void loadServiceUsages() {
+        if (addedServiceModel == null) {
+            return;
+        }
+        addedServiceModel.setRowCount(0);
+        if (currentCheckinId <= 0) {
+            return;
+        }
+
+        for (ServiceUsage su : serviceUsageDAO.getByCheckinId(currentCheckinId)) {
+            Service s = serviceDAO.getById(su.getServiceId());
+            if (s == null) {
+                continue;
+            }
+            double price = s.getPrice();
+            int qty = su.getQuantity();
+            double total = price * qty;
+            addedServiceModel.addRow(new Object[]{s.getServiceName(), su.getCreatedAt() != null ? su.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "N/A", qty, String.format("%.0f", price), String.format("%.0f", total), su.getUsageId()});
         }
     }
     
-    // Methods để truyền dữ liệu vào các label và components
+    private void deleteSelectedServiceUsage() {
+        int selectedRow = tableDichVuDaChon.getSelectedRow();
+        if (selectedRow < 0) {
+            return;
+        }
+
+        int row = tableDichVuDaChon.convertRowIndexToModel(selectedRow);
+        Object usageIdObj = addedServiceModel.getValueAt(row, 5); // ID is at column 5 (hidden)
+
+        int usageId;
+        try {
+            usageId = Integer.parseInt(String.valueOf(usageIdObj));
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy ID sử dụng dịch vụ.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa dịch vụ này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        boolean ok = serviceUsageDAO.delete(usageId);
+        if (ok) {
+            JOptionPane.showMessageDialog(this, "Xóa dịch vụ thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Xóa dịch vụ thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        loadServiceUsages();
+    }
+    
     public void setChiTietThuePhong(String khachHang, String ngayTra, String gia, Object[][] tableData, String total) {
         lblKhachHang.setText("Khách Hàng: " + khachHang);
         lblNgayTraPhong.setText("Ngày Trả Phòng: " + ngayTra);
