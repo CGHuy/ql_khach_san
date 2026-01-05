@@ -10,7 +10,7 @@ public class Room {
     
     public Room() {}
 
-    public Room(int roomId, String roomNumber, int typeId, int floorId, String status, String note) {
+    public Room(int roomId, String roomNumber, int typeId, int floorId, String status) {
         this.roomId = roomId;
         this.roomNumber = roomNumber;
         this.typeId = typeId;
@@ -57,10 +57,6 @@ public class Room {
 
     public void setFloorId(int floorId) {
         this.floorId = floorId;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
     }
 
     public void setStatus(String status) {

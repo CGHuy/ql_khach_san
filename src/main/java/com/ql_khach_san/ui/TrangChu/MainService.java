@@ -2,8 +2,10 @@ package com.ql_khach_san.ui.TrangChu;
 
 import com.ql_khach_san.dao.RoomDAO;
 import com.ql_khach_san.dao.RoomTypeDAO;
+import com.ql_khach_san.dao.FloorDAO;
 import com.ql_khach_san.model.Room;
 import com.ql_khach_san.model.RoomType;
+import com.ql_khach_san.model.Floor;
 
 import java.awt.Color;
 import java.util.*;
@@ -13,6 +15,7 @@ import java.util.regex.Pattern;
 public class MainService {
     private final RoomDAO roomDAO;
     private final RoomTypeDAO roomTypeDAO;
+    private final FloorDAO floorDAO;
 
     private static final Color COLOR_AVAILABLE = new Color(0, 200, 0);
     private static final Color COLOR_OCCUPIED = new Color(200, 40, 40);
@@ -22,6 +25,7 @@ public class MainService {
     public MainService() {
         this.roomDAO = new RoomDAO();
         this.roomTypeDAO = new RoomTypeDAO();
+        this.floorDAO = new FloorDAO();
     }
 
     public List<RoomView> getAllRoomViews() {
@@ -31,7 +35,8 @@ public class MainService {
         for (Room r : rooms) {
             RoomType rt = roomTypeDAO.getById(r.getTypeId());
             String typeName = rt != null ? rt.getTypeName() : "";
-            String floor = extractFloorFromRoomNumber(r.getRoomNumber());
+            Floor f = floorDAO.getById(r.getFloorId());
+            String floor = f != null ? String.valueOf(f.getFloor_number()) : "0";
             Color color = mapStatusToColor(r.getStatus());
 
             // 1. Mặc định reservationId là 0 (hoặc -1) nếu phòng không phải 'Đã đặt'
@@ -89,17 +94,5 @@ public class MainService {
         if (s.contains("đã đặt")) return COLOR_RESERVED;
         if (s.contains("đang dọn")) return COLOR_CLEANING;
         return COLOR_AVAILABLE;
-    }
-
-    public String extractFloorFromRoomNumber(String roomNumber) {
-        if (roomNumber == null) return "0";
-        Matcher m = Pattern.compile("(\\d+)").matcher(roomNumber);
-        if (m.find()) {
-            String digits = m.group(1);
-            if (digits.length() == 3) return digits.substring(0, 1);
-            else if (digits.length() >= 4) return digits.substring(0, 2);
-            else return digits;
-        }
-        return "0";
     }
 }

@@ -19,7 +19,7 @@ public class RoomDAO {
         String sql = "SELECT room_id, room_number, type_id, floor_id, status FROM room";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                Room r = new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"), null);
+                Room r = new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"));
                 list.add(r);
             }
         } catch (SQLException e) {
@@ -35,7 +35,7 @@ public class RoomDAO {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"), null);
+                    return new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"));
                 }
             }
         } catch (SQLException e) {
@@ -52,7 +52,7 @@ public class RoomDAO {
             ps.setInt(1, typeId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status"), null));
+                    list.add(new Room(rs.getInt("room_id"), rs.getString("room_number"), rs.getInt("type_id"), rs.getInt("floor_id"), rs.getString("status")));
                 }
             }
         } catch (SQLException e) {
@@ -165,7 +165,7 @@ public class RoomDAO {
     }
     
     public int getActiveReservationId(int roomId) {
-        String sql = "SELECT reservation_id FROM reservation WHERE room_id = ? AND status = 'Đã đặt' LIMIT 1";
+        String sql = "SELECT reservation_id FROM reservation WHERE room_id = ? AND status IN ('Đã đặt', 'Đã nhận phòng') ORDER BY booking_date DESC LIMIT 1";
         try (Connection conn = DBConnection.getConnection(); 
             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, roomId);
@@ -179,59 +179,4 @@ public class RoomDAO {
         }
         return 0; // Trả về 0 nếu không tìm thấy đơn nào đang chờ
     }
-    
-    public boolean cancelReservationTransaction(int roomId, int reservationId) {
-        Connection conn = null;
-        PreparedStatement psRoom = null;
-        PreparedStatement psRes = null;
-
-        try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu Transaction
-
-            String sqlRoom = "UPDATE room SET status = 'Trống' WHERE room_id = ?";
-            psRoom = conn.prepareStatement(sqlRoom);
-            psRoom.setInt(1, roomId);
-            psRoom.executeUpdate();
-
-            String sqlRes = "UPDATE reservation SET status = 'Đã hủy' WHERE reservation_id = ?";
-            psRes = conn.prepareStatement(sqlRes);
-            psRes.setInt(1, reservationId);
-            psRes.executeUpdate();
-
-            conn.commit(); // Lưu thay đổi vào Database
-            return true;
-
-        } catch (Exception e) {
-            if (conn != null) {
-                try {
-                    conn.rollback(); // Quay xe nếu có bất kỳ lỗi nào xảy ra
-                    System.out.println("Transaction rolled back!");
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            e.printStackTrace();
-            return false;
-        } finally {
-            // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
-            try {
-                if (psRoom != null) psRoom.close();
-                if (psRes != null) psRes.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    // ===== Management UI Methods (với suffix _forMgmt) =====
-    public List<Room> getAll_forMgmt() { return getAll(); }
-    public Room getById_forMgmt(int id) { return getById(id); }
-    public boolean insert_forMgmt(Room r) { return insert(r); }
-    public boolean update_forMgmt(Room r) { return update(r); }
-    public boolean delete_forMgmt(int id) { return delete(id); }
-    public boolean existsByRoomNumber_forMgmt(String roomNumber) { return existsByRoomNumber(roomNumber); }
-    public boolean existsByRoomNumberExcludingId_forMgmt(String roomNumber, int excludeId) { return existsByRoomNumberExcludingId(roomNumber, excludeId); }
-    public List<String> getDistinctStatuses_forMgmt() { return getDistinctStatuses(); }
 }
