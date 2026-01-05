@@ -5,9 +5,9 @@ public class RoomType {
     private String typeName;
     private double price;
     private String description;
-    
-    public RoomType () {}
-    
+
+    public RoomType() {}
+
     public RoomType(int typeId, String typeName, double price, String description) {
         this.typeId = typeId;
         this.typeName = typeName;
@@ -46,6 +46,5 @@ public class RoomType {
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    
+
 }
