@@ -83,4 +83,23 @@ public class ReservationDAO {
         }
         return false;
     }
+    
+    public List<Reservation> getByCustomerId(int customerId) {
+        List<Reservation> list = new ArrayList<>();
+        String sql = "SELECT reservation_id, customer_id, room_id, booking_date, checkin_date, checkout_date, status FROM reservation WHERE customer_id = ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    LocalDateTime booking = rs.getTimestamp("booking_date") != null ? rs.getTimestamp("booking_date").toLocalDateTime() : null;
+                    LocalDateTime checkin = rs.getTimestamp("checkin_date") != null ? rs.getTimestamp("checkin_date").toLocalDateTime() : null;
+                    LocalDateTime checkout = rs.getTimestamp("checkout_date") != null ? rs.getTimestamp("checkout_date").toLocalDateTime() : null;
+                    list.add(new Reservation(rs.getInt("reservation_id"), rs.getInt("customer_id"), rs.getInt("room_id"), booking, checkin, checkout, rs.getString("status")));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
