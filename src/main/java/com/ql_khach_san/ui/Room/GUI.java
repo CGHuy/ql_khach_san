@@ -168,7 +168,7 @@ public class GUI extends JFrame {
 	}
 
 	private void loadRoomTypes() {
-		typeList = typeDao.getAll();
+		typeList = typeDao.getAll_forMgmt();
 		cmbRoomType.removeAllItems();
 		for (RoomType t: typeList) {
 			cmbRoomType.addItem(t.getTypeName());
@@ -176,7 +176,7 @@ public class GUI extends JFrame {
 	}
 
 	private void loadFloors() {
-		floorList = floorDao.getAll();
+		floorList = floorDao.getAll_forMgmt();
 		cmbFloor.removeAllItems();
 		for (Floor f : floorList) {
 			cmbFloor.addItem("Tầng " + f.getFloorNumber());
@@ -184,7 +184,7 @@ public class GUI extends JFrame {
 	}
 
 	private void loadStatuses() {
-		List<String> statuses = roomDao.getDistinctStatuses();
+		List<String> statuses = roomDao.getDistinctStatuses_forMgmt();
 		cmbStatus.removeAllItems();
 		if (statuses == null || statuses.isEmpty()) {
 			cmbStatus.addItem("Trống");
@@ -196,7 +196,7 @@ public class GUI extends JFrame {
 
 	private void loadTable() {
 		tableModel.setRowCount(0);
-		roomList = roomDao.getAll();
+		roomList = roomDao.getAll_forMgmt();
 		displayedList.clear();
 		if (roomDao.getLastError() != null && !roomDao.getLastError().isEmpty()) {
 			JOptionPane.showMessageDialog(this, "Lỗi kết nối Database:\n" + roomDao.getLastError(), "Lỗi DB", JOptionPane.ERROR_MESSAGE);
@@ -204,7 +204,7 @@ public class GUI extends JFrame {
 		}
 		String q = txtSearch == null ? "" : txtSearch.getText().trim().toLowerCase();
 		for (Room r : roomList) {
-			RoomType rt = typeDao.getById(r.getTypeId());
+			RoomType rt = typeDao.getById_forMgmt(r.getTypeId());
 			String typeName = rt == null ? "" : rt.getTypeName();
 			Object price = rt == null ? "" : rt.getPrice();
 			Floor fl = null;
@@ -224,7 +224,7 @@ public class GUI extends JFrame {
 			int idx = cmbRoomType.getSelectedIndex();
 			if (idx < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn loại phòng"); return; }
 			// check duplicate room number
-			if (roomDao.existsByRoomNumber(roomNum)) { JOptionPane.showMessageDialog(this, "Số phòng đã tồn tại"); return; }
+			if (roomDao.existsByRoomNumber_forMgmt(roomNum)) { JOptionPane.showMessageDialog(this, "Số phòng đã tồn tại"); return; }
 			Room r = new Room();
 			r.setRoomNumber(roomNum);
 			if (idx >= 0) r.setTypeId(typeList.get(idx).getTypeId());
@@ -232,7 +232,7 @@ public class GUI extends JFrame {
 			int fidx = cmbFloor.getSelectedIndex();
 			if (fidx >= 0 && fidx < floorList.size()) r.setFloorId(floorList.get(fidx).getFloorId());
 			r.setStatus((String) cmbStatus.getSelectedItem());
-			if (roomDao.insert(r)) {
+			if (roomDao.insert_forMgmt(r)) {
 				JOptionPane.showMessageDialog(this, "Thêm thành công");
 				loadTable();
 				clearForm();
@@ -248,14 +248,14 @@ public class GUI extends JFrame {
 			String roomNum = txtRoomNumber.getText() == null ? "" : txtRoomNumber.getText().trim();
 			if (roomNum.isEmpty()) { JOptionPane.showMessageDialog(this, "Vui lòng nhập số phòng"); return; }
 			// check duplicate excluding current
-			if (roomDao.existsByRoomNumberExcludingId(roomNum, rr.getRoomId())) { JOptionPane.showMessageDialog(this, "Số phòng đã tồn tại"); return; }
+			if (roomDao.existsByRoomNumberExcludingId_forMgmt(roomNum, rr.getRoomId())) { JOptionPane.showMessageDialog(this, "Số phòng đã tồn tại"); return; }
 			rr.setRoomNumber(roomNum);
 			int idx = cmbRoomType.getSelectedIndex();
 			if (idx >= 0) rr.setTypeId(typeList.get(idx).getTypeId());
 			int fidx2 = cmbFloor.getSelectedIndex();
 			if (fidx2 >= 0 && fidx2 < floorList.size()) rr.setFloorId(floorList.get(fidx2).getFloorId());
 			rr.setStatus((String) cmbStatus.getSelectedItem());
-			if (roomDao.update(rr)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công"); loadTable(); }
+			if (roomDao.update_forMgmt(rr)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công"); loadTable(); }
 			else JOptionPane.showMessageDialog(this, "Cập nhật thất bại");
 		} catch (Exception ex) { JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage()); }
 	}
@@ -267,13 +267,10 @@ public class GUI extends JFrame {
 		int ok = JOptionPane.showConfirmDialog(this, "Xóa phòng " + sel.getRoomNumber() + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
 		if (ok != JOptionPane.YES_OPTION) return;
 		try {
-			boolean success = roomDao.delete(sel.getRoomId());
+			boolean success = roomDao.delete_forMgmt(sel.getRoomId());
 			if (success) { JOptionPane.showMessageDialog(this, "Xóa thành công"); loadTable(); }
 			else {
-				String err = roomDao.getLastError();
-				String msg = "Phòng đang được đặt không thể xóa !!!";
-				if (err != null && !err.isEmpty()) msg += "\nChi tiết: " + err;
-				JOptionPane.showMessageDialog(this, msg);
+				JOptionPane.showMessageDialog(this, "Phòng đang được đặt không thể xóa !!!");
 			}
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this, "Lỗi khi xóa: " + ex.getMessage());

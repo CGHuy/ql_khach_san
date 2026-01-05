@@ -121,4 +121,13 @@ public class RoomTypeDAO {
         }
         return false;
     }
+
+    // ===== Management UI Methods (với suffix _forMgmt) =====
+    public List<RoomType> getAll_forMgmt() { return getAll(); }
+    public RoomType getById_forMgmt(int id) { return getById(id); }
+    public boolean insert_forMgmt(RoomType rt) { return insert(rt); }
+    public boolean update_forMgmt(RoomType rt) { return update(rt); }
+    public boolean delete_forMgmt(int id) { return delete(id); }
+    public boolean existsByTypeName_forMgmt(String typeName) { return existsByTypeName(typeName); }
+    public boolean existsByTypeNameExcludingId_forMgmt(String typeName, int excludeId) { return existsByTypeNameExcludingId(typeName, excludeId); }
 }

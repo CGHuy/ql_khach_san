@@ -159,7 +159,18 @@ public class RoomDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
+
+    // ===== Management UI Methods (với suffix _forMgmt) =====
+    public List<Room> getAll_forMgmt() { return getAll(); }
+    public Room getById_forMgmt(int id) { return getById(id); }
+    public boolean insert_forMgmt(Room r) { return insert(r); }
+    public boolean update_forMgmt(Room r) { return update(r); }
+    public boolean delete_forMgmt(int id) { return delete(id); }
+    public boolean existsByRoomNumber_forMgmt(String roomNumber) { return existsByRoomNumber(roomNumber); }
+    public boolean existsByRoomNumberExcludingId_forMgmt(String roomNumber, int excludeId) { return existsByRoomNumberExcludingId(roomNumber, excludeId); }
+    public List<String> getDistinctStatuses_forMgmt() { return getDistinctStatuses(); }
 }

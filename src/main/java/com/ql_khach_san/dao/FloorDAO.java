@@ -30,4 +30,7 @@ public class FloorDAO {
         }
         return list;
     }
+
+    // ===== Management UI Methods (với suffix _forMgmt) =====
+    public List<Floor> getAll_forMgmt() { return getAll(); }
 }
