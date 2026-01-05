@@ -167,8 +167,12 @@ public class GUI extends JFrame {
     // --- CÁC HÀM DAO (Giữ nguyên từ code đầu tiên) ---
     private void loadTable() {
         tableModel.setRowCount(0);
+        List<RoomType> list = dao.getAll_forMgmt();
+        if (dao.getLastError() != null && !dao.getLastError().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Lỗi kết nối Database:\n" + dao.getLastError(), "Lỗi DB", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         try {
-            List<RoomType> list = dao.getAll();
             String q = txtSearch == null ? "" : txtSearch.getText().trim().toLowerCase();
             for (RoomType rt : list) {
                 if (!q.isEmpty() && !rt.getTypeName().toLowerCase().contains(q)) continue;
@@ -180,30 +184,53 @@ public class GUI extends JFrame {
     private void onAdd(ActionEvent e) {
         try {
             RoomType rt = new RoomType();
-            rt.setTypeName(txtTypeName.getText().trim());
+            String name = txtTypeName.getText() == null ? "" : txtTypeName.getText().trim();
+            if (name.isEmpty()) { JOptionPane.showMessageDialog(this, "Vui lòng nhập tên loại phòng"); return; }
+            if (dao.existsByTypeName_forMgmt(name)) { JOptionPane.showMessageDialog(this, "Tên loại phòng đã tồn tại"); return; }
+            rt.setTypeName(name);
             rt.setPrice(Double.parseDouble(txtPrice.getText().trim()));
             rt.setDescription(txtDescription.getText().trim());
-            if (dao.insert(rt)) { JOptionPane.showMessageDialog(this, "Thêm thành công"); loadTable(); }
+            if (dao.insert_forMgmt(rt)) { JOptionPane.showMessageDialog(this, "Thêm thành công"); loadTable(); }
             else JOptionPane.showMessageDialog(this, "Thêm thất bại");
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Lỗi dữ liệu: " + ex.getMessage()); }
     }
 
     private void onEdit(ActionEvent e) {
         try {
+            String idText = txtTypeId.getText() == null ? "" : txtTypeId.getText().trim();
+            if (idText.isEmpty()) { JOptionPane.showMessageDialog(this, "Chọn loại phòng để sửa"); return; }
+            int id = Integer.parseInt(idText);
+            String name = txtTypeName.getText() == null ? "" : txtTypeName.getText().trim();
+            if (name.isEmpty()) { JOptionPane.showMessageDialog(this, "Vui lòng nhập tên loại phòng"); return; }
+            if (dao.existsByTypeNameExcludingId_forMgmt(name, id)) { JOptionPane.showMessageDialog(this, "Tên loại phòng đã tồn tại"); return; }
             RoomType rt = new RoomType();
-            rt.setTypeId(Integer.parseInt(txtTypeId.getText().trim()));
-            rt.setTypeName(txtTypeName.getText().trim());
+            rt.setTypeId(id);
+            rt.setTypeName(name);
             rt.setPrice(Double.parseDouble(txtPrice.getText().trim()));
             rt.setDescription(txtDescription.getText().trim());
-            if (dao.update(rt)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công"); loadTable(); }
+            if (dao.update_forMgmt(rt)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công"); loadTable(); }
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Lỗi sửa: " + ex.getMessage()); }
     }
 
     private void onDelete(ActionEvent e) {
+        String idText = txtTypeId.getText() == null ? "" : txtTypeId.getText().trim();
+        if (idText.isEmpty()) { JOptionPane.showMessageDialog(this, "Chọn loại phòng để xóa"); return; }
+        int id;
+        try { id = Integer.parseInt(idText); } catch (NumberFormatException ex) { JOptionPane.showMessageDialog(this, "ID không hợp lệ"); return; }
+        int ok = JOptionPane.showConfirmDialog(this, "Xóa loại phòng " + id + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (ok != JOptionPane.YES_OPTION) return;
         try {
-            int id = Integer.parseInt(txtTypeId.getText().trim());
-            if (dao.delete(id)) { JOptionPane.showMessageDialog(this, "Xóa thành công"); loadTable(); }
-        } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Lỗi xóa!"); }
+            boolean success = dao.delete_forMgmt(id);
+            if (success) { JOptionPane.showMessageDialog(this, "Xóa thành công"); loadTable(); }
+            else {
+                String err = dao.getLastError();
+                String msg = "Xóa thất bại. Phòng đang sử dụng.";
+                if (err != null && !err.isEmpty()) msg += "\nChi tiết: " + err;
+                JOptionPane.showMessageDialog(this, msg);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi xóa: " + ex.getMessage());
+        }
     }
 
     public static void main(String[] args) {
