@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import com.ql_khach_san.ui.TrangChu.MainService;
 import com.ql_khach_san.ui.TrangChu.RoomView;
+import com.ql_khach_san.ui.PhanCong.WorkTimeGUI;
 import java.util.Map;
 
 public class MainFrame extends JFrame {
@@ -101,6 +102,11 @@ public class MainFrame extends JFrame {
                     button.setBackground(new Color(200, 180, 180));
                 }
             });
+            
+            // Thêm action listener cho nút "Thời Gian"
+            if (item.equals("Thời Gian")) {
+                button.addActionListener(e -> new WorkTimeGUI());
+            }
             
             panel.add(button);
             panel.add(Box.createVerticalStrut(12));
