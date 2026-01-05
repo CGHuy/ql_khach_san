@@ -4,24 +4,10 @@ import com.ql_khach_san.config.DBConnection;
 import com.ql_khach_san.model.Floor;
 
 import java.sql.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FloorDAO {
-    
-    public List<Floor> getAll() {
-        List<Floor> list = new ArrayList<>();
-        String sql = "SELECT floor_id, floor_number, description FROM floor";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(new Floor(rs.getInt("floor_id"), rs.getInt("floor_number"), rs.getString("description")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
 
     private String lastError;
 
@@ -53,6 +39,7 @@ public class FloorDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return null;
     }
@@ -69,6 +56,7 @@ public class FloorDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
@@ -82,6 +70,7 @@ public class FloorDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
@@ -93,9 +82,15 @@ public class FloorDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
+
     // ===== Management UI Methods (với suffix _forMgmt) =====
     public List<Floor> getAll_forMgmt() { return getAll(); }
+    public Floor getById_forMgmt(int id) { return getById(id); }
+    public boolean insert_forMgmt(Floor f) { return insert(f); }
+    public boolean update_forMgmt(Floor f) { return update(f); }
+    public boolean delete_forMgmt(int id) { return delete(id); }
 }

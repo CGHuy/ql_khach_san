@@ -34,6 +34,10 @@ public class Floor {
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    
+
+    // Alias methods for GUI compatibility
+    public int getFloorId() { return getFloor_id(); }
+    public int getFloorNumber() { return getFloor_number(); }
+    public void setFloorId(int floorId) { setFloor_id(floorId); }
+    public void setFloorNumber(int floorNumber) { setFloor_number(floorNumber); }
 }
