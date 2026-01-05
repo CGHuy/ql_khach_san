@@ -1,5 +1,5 @@
 
-package com.ql_khach_san.ui.TrangChu;
+package com.ql_khach_san.main;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import com.ql_khach_san.dao.EmployeeDAO;
 import com.ql_khach_san.model.Employee;
+import com.ql_khach_san.ui.TrangChu.MainFrame;
 
 public class LoginFrame extends JFrame {
     private JTextField txtUsername;
