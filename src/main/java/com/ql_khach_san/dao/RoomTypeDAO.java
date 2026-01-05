@@ -9,6 +9,11 @@ import java.util.List;
 
 public class RoomTypeDAO {
 
+    private String lastError;
+
+    public String getLastError() { return lastError; }
+
+
     public List<RoomType> getAll() {
         List<RoomType> list = new ArrayList<>();
         String sql = "SELECT type_id, type_name, price, description FROM room_type";
@@ -19,6 +24,7 @@ public class RoomTypeDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return list;
     }
@@ -34,6 +40,7 @@ public class RoomTypeDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return null;
     }
@@ -55,6 +62,7 @@ public class RoomTypeDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
@@ -69,6 +77,7 @@ public class RoomTypeDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
@@ -80,6 +89,35 @@ public class RoomTypeDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean existsByTypeName(String typeName) {
+        String sql = "SELECT 1 FROM room_type WHERE type_name = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, typeName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
+        }
+        return false;
+    }
+
+    public boolean existsByTypeNameExcludingId(String typeName, int excludeId) {
+        String sql = "SELECT 1 FROM room_type WHERE type_name = ? AND type_id <> ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, typeName);
+            ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }

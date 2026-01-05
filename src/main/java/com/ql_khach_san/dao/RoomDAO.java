@@ -9,6 +9,11 @@ import java.util.List;
 
 public class RoomDAO {
 
+    private String lastError;
+
+    public String getLastError() { return lastError; }
+
+
     public List<Room> getAll() {
         List<Room> list = new ArrayList<>();
         String sql = "SELECT room_id, room_number, type_id, floor_id, status FROM room";
@@ -19,6 +24,7 @@ public class RoomDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return list;
     }
@@ -34,6 +40,7 @@ public class RoomDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return null;
     }
@@ -50,6 +57,7 @@ public class RoomDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return list;
     }
@@ -70,6 +78,7 @@ public class RoomDAO {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
@@ -85,6 +94,7 @@ public class RoomDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            lastError = e.getMessage();
         }
         return false;
     }
@@ -99,6 +109,47 @@ public class RoomDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public boolean existsByRoomNumber(String roomNumber) {
+        String sql = "SELECT 1 FROM room WHERE room_number = ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, roomNumber);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
+        }
+        return false;
+    }
+
+    public boolean existsByRoomNumberExcludingId(String roomNumber, int excludeId) {
+        String sql = "SELECT 1 FROM room WHERE room_number = ? AND room_id <> ? LIMIT 1";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, roomNumber);
+            ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
+        }
+        return false;
+    }
+
+    public List<String> getDistinctStatuses() {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT status FROM room";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(rs.getString(1));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
+        }
+        return list;
     }
 
     public boolean delete(int id) {
