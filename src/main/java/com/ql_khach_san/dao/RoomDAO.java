@@ -179,4 +179,14 @@ public class RoomDAO {
         }
         return 0; // Trả về 0 nếu không tìm thấy đơn nào đang chờ
     }
+
+    // ===== Management UI Methods (với suffix _forMgmt) =====
+    public List<Room> getAll_forMgmt() { return getAll(); }
+    public Room getById_forMgmt(int id) { return getById(id); }
+    public boolean insert_forMgmt(Room r) { return insert(r); }
+    public boolean update_forMgmt(Room r) { return update(r); }
+    public boolean delete_forMgmt(int id) { return delete(id); }
+    public boolean existsByRoomNumber_forMgmt(String roomNumber) { return existsByRoomNumber(roomNumber); }
+    public boolean existsByRoomNumberExcludingId_forMgmt(String roomNumber, int excludeId) { return existsByRoomNumberExcludingId(roomNumber, excludeId); }
+    public List<String> getDistinctStatuses_forMgmt() { return getDistinctStatuses(); }
 }

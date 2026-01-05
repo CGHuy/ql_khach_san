@@ -26,7 +26,6 @@ public class GUI extends JFrame {
 	private JTextField txtSearch;
 	private JComboBox<String> cmbFloor;
 	private JComboBox<String> cmbRoomType;
-	private JComboBox<String> cmbStatus;
 	private JButton btnAdd, btnEdit, btnDelete, btnNew;
 
 	private JTable table;
@@ -82,9 +81,6 @@ public class GUI extends JFrame {
 		c.gridx = 0; c.gridy = 2; left.add(new JLabel("Loại Phòng"), c);
 		c.gridx = 1; cmbRoomType = new JComboBox<>(); left.add(cmbRoomType, c);
 
-		c.gridx = 0; c.gridy = 3; left.add(new JLabel("Trạng Thái"), c);
-		c.gridx = 1; cmbStatus = new JComboBox<>(); left.add(cmbStatus, c);
-
 
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
@@ -123,10 +119,9 @@ public class GUI extends JFrame {
 		getContentPane().add(formPanel, BorderLayout.WEST);
 		getContentPane().add(tableScroll, BorderLayout.CENTER);
 
-		// load types, floors, statuses and data
+		// load types, floors and data
 		loadRoomTypes();
 		loadFloors();
-		loadStatuses();
 		loadTable();
 
 		// search & sort listeners
@@ -153,7 +148,7 @@ public class GUI extends JFrame {
 					// select type
 					int typeId = sel.getTypeId();
 					for (int i=0;i<typeList.size();i++) if (typeList.get(i).getTypeId()==typeId) { cmbRoomType.setSelectedIndex(i); break; }
-							cmbStatus.setSelectedItem(sel.getStatus());
+
 							// set floor selection by matching floorId
 							if (sel.getFloorId() > 0) {
 								for (int i = 0; i < floorList.size(); i++) {
@@ -181,17 +176,6 @@ public class GUI extends JFrame {
 		for (Floor f : floorList) {
 			cmbFloor.addItem("Tầng " + f.getFloorNumber());
 		}
-	}
-
-	private void loadStatuses() {
-		List<String> statuses = roomDao.getDistinctStatuses_forMgmt();
-		cmbStatus.removeAllItems();
-		if (statuses == null || statuses.isEmpty()) {
-			cmbStatus.addItem("Trống");
-			cmbStatus.addItem("Đã có người ở");
-			return;
-		}
-		for (String s : statuses) cmbStatus.addItem(s);
 	}
 
 	private void loadTable() {
@@ -231,7 +215,7 @@ public class GUI extends JFrame {
 			// floor selection -> floorId using floorList
 			int fidx = cmbFloor.getSelectedIndex();
 			if (fidx >= 0 && fidx < floorList.size()) r.setFloorId(floorList.get(fidx).getFloorId());
-			r.setStatus((String) cmbStatus.getSelectedItem());
+		r.setStatus("Trống");
 			if (roomDao.insert_forMgmt(r)) {
 				JOptionPane.showMessageDialog(this, "Thêm thành công");
 				loadTable();
@@ -254,7 +238,7 @@ public class GUI extends JFrame {
 			if (idx >= 0) rr.setTypeId(typeList.get(idx).getTypeId());
 			int fidx2 = cmbFloor.getSelectedIndex();
 			if (fidx2 >= 0 && fidx2 < floorList.size()) rr.setFloorId(floorList.get(fidx2).getFloorId());
-			rr.setStatus((String) cmbStatus.getSelectedItem());
+
 			if (roomDao.update_forMgmt(rr)) { JOptionPane.showMessageDialog(this, "Cập nhật thành công"); loadTable(); }
 			else JOptionPane.showMessageDialog(this, "Cập nhật thất bại");
 		} catch (Exception ex) { JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage()); }
@@ -281,7 +265,6 @@ public class GUI extends JFrame {
 		txtRoomNumber.setText("");
 		if (cmbFloor.getItemCount() > 0) cmbFloor.setSelectedIndex(0);
 		if (cmbRoomType.getItemCount()>0) cmbRoomType.setSelectedIndex(0);
-		if (cmbStatus.getItemCount() > 0) cmbStatus.setSelectedIndex(0);
 	}
 
 
