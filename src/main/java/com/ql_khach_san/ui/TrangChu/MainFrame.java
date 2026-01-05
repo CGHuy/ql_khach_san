@@ -112,6 +112,24 @@ public class MainFrame extends JFrame {
                 }
             });
 
+            // Thêm action listener cho nút "Phòng"
+            if (item.equals("Phòng")) {
+                button.addActionListener(e -> {
+                    // Mở form quản lý phòng (Room.GUI)
+                    com.ql_khach_san.ui.Room.GUI roomGui = new com.ql_khach_san.ui.Room.GUI();
+                    roomGui.setVisible(true);
+                });
+            }
+
+            // Thêm action listener cho nút "Loại Phòng"
+            if (item.equals("Loại Phòng")) {
+                button.addActionListener(e -> {
+                    // Mở form quản lý loại phòng (RoomType.GUI)
+                    com.ql_khach_san.ui.RoomType.GUI typeGui = new com.ql_khach_san.ui.RoomType.GUI();
+                    typeGui.setVisible(true);
+                });
+            }
+
             // Thêm action listener cho nút "Thời Gian"
             if (item.equals("Thời Gian")) {
                 button.addActionListener(e -> new WorkTimeGUI());

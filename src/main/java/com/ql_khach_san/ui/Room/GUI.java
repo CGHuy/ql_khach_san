@@ -284,8 +284,5 @@ public class GUI extends JFrame {
 		if (cmbStatus.getItemCount() > 0) cmbStatus.setSelectedIndex(0);
 	}
 
-	public static void main(String[] args) {
-		SwingUtilities.invokeLater(() -> new GUI().setVisible(true));
-	}
 
 }
