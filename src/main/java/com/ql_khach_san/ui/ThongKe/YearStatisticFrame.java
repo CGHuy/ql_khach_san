@@ -19,6 +19,7 @@ import java.util.Calendar;
 public class YearStatisticFrame extends JFrame {
     private StatisticService service = new StatisticService();
     private ChartPanel chartPanel;
+    private ChartPanel chartPanelRight;
     private ChartPanel pieServicePanel;
     private ChartPanel pieRoomBookedPanel;
     private DefaultTableModel tableModel;
@@ -52,11 +53,16 @@ public class YearStatisticFrame extends JFrame {
         pieRoomBookedDataset = new DefaultPieDataset();
         pieServiceDataset = new DefaultPieDataset();
 
-        // Main chart: Doanh thu theo tháng (spans full width)
+        // Main chart: Doanh thu theo tháng
         JFreeChart chart = ChartFactory.createBarChart("Doanh thu theo tháng trong năm", "Tháng", "Doanh thu", revenueDataset);
         chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(1180, 240));
+        chartPanel.setPreferredSize(new Dimension(575, 190));
         formatChart(chartPanel);
+
+        // Second revenue chart replaces KPI panel
+        chartPanelRight = new ChartPanel(ChartFactory.createBarChart("Doanh thu theo tháng trong năm " + currentYear, "Tháng", "Doanh thu", revenueDataset));
+        chartPanelRight.setPreferredSize(new Dimension(575, 190));
+        formatChart(chartPanelRight);
 
         // Pie chart for room types booked (keep as pie)
         JFreeChart pieRoomBookedChart = ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false);
@@ -67,14 +73,12 @@ public class YearStatisticFrame extends JFrame {
         pieServicePanel = new ChartPanel(pieServiceChart);
         pieServicePanel.setPreferredSize(new Dimension(575, 190));
 
-        // Panel to hold charts with main chart on top and pies below
-        JPanel chartsPanel = new JPanel(new BorderLayout(5,5));
-        chartsPanel.add(chartPanel, BorderLayout.NORTH);
-        JPanel lower = new JPanel(new GridLayout(1,2,5,5));
-        lower.add(pieRoomBookedPanel);
-        lower.add(pieServicePanel);
-        chartsPanel.add(lower, BorderLayout.CENTER);
-
+        // Panel to hold all charts in a 2x2 grid
+        JPanel chartsPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        chartsPanel.add(chartPanel);
+        chartsPanel.add(chartPanelRight);
+        chartsPanel.add(pieRoomBookedPanel);
+        chartsPanel.add(pieServicePanel);
 
         // Add some padding around charts
         JPanel wrapper = new JPanel(new BorderLayout());
@@ -111,7 +115,9 @@ public class YearStatisticFrame extends JFrame {
 
 
 
-
+    private String formatNumber(int n) {
+        try { return new DecimalFormat("#,##0").format(n); } catch (Exception ex) { return String.valueOf(n); }
+    }
     private void loadForYear(int year) {
         // Load all data at once
         revenueDataset.clear();
@@ -142,8 +148,7 @@ public class YearStatisticFrame extends JFrame {
             int count = 0; try { count = Integer.parseInt(String.valueOf(row[1])); } catch (Exception ex) { }
             pieRoomBookedDataset.setValue(type, count);
         }
-
-
+        pieRoomBookedPanel.setChart(ChartFactory.createPieChart("Tỉ lệ loại phòng được đặt", pieRoomBookedDataset, true, true, false));
 
         // Load service usage
         List<Object[]> serviceStats = service.getServiceUsageForYear(year);

@@ -10,7 +10,7 @@ public class DBConnection {
     // Read DB config from environment variables (allow overrides) for easier local setup.
     private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/db_ql_khach_san?useSSL=false&serverTimezone=UTC";
     private static final String DEFAULT_USER = "root";
-    private static final String DEFAULT_PASSWORD = "";
+    private static final String DEFAULT_PASSWORD = "123";
 
     private static Connection connection;
 

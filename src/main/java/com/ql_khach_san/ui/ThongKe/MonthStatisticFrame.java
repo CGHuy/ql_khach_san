@@ -60,7 +60,7 @@ public class MonthStatisticFrame extends JFrame {
 
         JPanel chartsPanel = new JPanel(new BorderLayout(5,5));
         chartsPanel.add(chartPanel, BorderLayout.NORTH);
-        JPanel lower = new JPanel(new GridLayout(1,2,5,5));
+        JPanel lower = new JPanel(new GridLayout(1, 2, 5, 5));
         lower.add(pieRoomBookedPanel);
         lower.add(pieServicePanel);
         chartsPanel.add(lower, BorderLayout.CENTER);
@@ -99,7 +99,9 @@ public class MonthStatisticFrame extends JFrame {
 
 
 
-
+    private String formatNumber(int n) {
+        try { return new DecimalFormat("#,##0").format(n); } catch (Exception ex) { return String.valueOf(n); }
+    }
     private void loadForMonth(int year, int month) {
         // Clear and populate
         tableModel.setRowCount(0);
