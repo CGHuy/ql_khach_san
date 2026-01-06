@@ -25,7 +25,7 @@ public class WorkTimeGUI extends JFrame {
     private WorkTimeDAO workTimeDAO = new WorkTimeDAO();
     private EmployeeDAO employeeDAO = new EmployeeDAO();
     
-    private JButton btnAdd, btnEdit, btnDelete, btnRefresh, btnCheckIn, btnCheckOut;
+    private JButton btnAdd, btnEdit, btnDelete, btnRefresh;
     private JLabel lblStatus, lblTotalHours;
 
     public WorkTimeGUI() {
@@ -155,13 +155,7 @@ public class WorkTimeGUI extends JFrame {
         btnDelete.addActionListener(e -> deleteWorkTime());
         panel.add(btnDelete);
 
-        btnCheckIn = new JButton("Check-in hôm nay");
-        btnCheckIn.addActionListener(e -> checkIn());
-        panel.add(btnCheckIn);
 
-        btnCheckOut = new JButton("Check-out hôm nay");
-        btnCheckOut.addActionListener(e -> checkOut());
-        panel.add(btnCheckOut);
 
         btnRefresh = new JButton("Làm mới");
         btnRefresh.addActionListener(e -> loadData());
@@ -264,62 +258,7 @@ public class WorkTimeGUI extends JFrame {
         }
     }
 
-    private void checkIn() {
-        Employee selected = (Employee) cbEmployee.getSelectedItem();
-        if (selected == null || selected.getEmployeeId() <= 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên!");
-            return;
-        }
-        
-        LocalDate today = LocalDate.now();
-        WorkTime existing = workTimeDAO.getByEmployeeAndDate(selected.getEmployeeId(), today);
-        
-        if (existing != null && existing.getTimeIn() != null) {
-            JOptionPane.showMessageDialog(this, "Nhân viên này đã check-in hôm nay!");
-            return;
-        }
-        
-        WorkTime w = new WorkTime();
-        w.setEmployeeId(selected.getEmployeeId());
-        w.setWorkDate(today);
-        w.setTimeIn(LocalTime.now());
-        
-        if (workTimeDAO.insert(w)) {
-            JOptionPane.showMessageDialog(this, "Check-in thành công!");
-            loadData();
-        } else {
-            JOptionPane.showMessageDialog(this, "Check-in thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
 
-    private void checkOut() {
-        Employee selected = (Employee) cbEmployee.getSelectedItem();
-        if (selected == null || selected.getEmployeeId() <= 0) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên!");
-            return;
-        }
-        
-        LocalDate today = LocalDate.now();
-        WorkTime existing = workTimeDAO.getByEmployeeAndDate(selected.getEmployeeId(), today);
-        
-        if (existing == null || existing.getTimeIn() == null) {
-            JOptionPane.showMessageDialog(this, "Nhân viên này chưa check-in hôm nay!");
-            return;
-        }
-        
-        if (existing.getTimeOut() != null) {
-            JOptionPane.showMessageDialog(this, "Nhân viên này đã check-out hôm nay!");
-            return;
-        }
-        
-        existing.setTimeOut(LocalTime.now());
-        if (workTimeDAO.update(existing)) {
-            JOptionPane.showMessageDialog(this, "Check-out thành công!");
-            loadData();
-        } else {
-            JOptionPane.showMessageDialog(this, "Check-out thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
 
     private LocalDate getDateFromSpinner(JSpinner spinner) {
         java.util.Date date = (java.util.Date) spinner.getValue();
