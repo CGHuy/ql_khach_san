@@ -41,10 +41,12 @@ public class StatisticService {
      */
     public List<Object[]> getServiceUsageForYear(int year) {
         List<Object[]> list = new ArrayList<>();
+        // Sử dụng checkin.checkin_time thay vì service_usage.created_at
         String sql = "SELECT s.service_name, SUM(su.quantity) as count " +
                      "FROM service_usage su " +
                      "JOIN service s ON su.service_id = s.service_id " +
-                     "WHERE YEAR(su.created_at) = ? " +
+                     "JOIN checkin ci ON su.checkin_id = ci.checkin_id " +
+                     "WHERE YEAR(ci.checkin_time) = ? " +
                      "GROUP BY s.service_name";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -65,11 +67,12 @@ public class StatisticService {
      */
     public List<Object[]> getRoomTypeBookedForYear(int year) {
         List<Object[]> list = new ArrayList<>();
+        // Sử dụng checkin_date thay vì booking_date
         String sql = "SELECT rt.type_name, COUNT(*) as count " +
                      "FROM reservation r " +
                      "JOIN room rm ON r.room_id = rm.room_id " +
                      "JOIN room_type rt ON rm.type_id = rt.type_id " +
-                     "WHERE YEAR(r.booking_date) = ? " +
+                     "WHERE YEAR(r.checkin_date) = ? " +
                      "GROUP BY rt.type_name";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -326,11 +329,12 @@ public class StatisticService {
 
     public List<Object[]> getRoomTypeBookedForMonth(int year, int month) {
         List<Object[]> list = new ArrayList<>();
+        // Sử dụng checkin_date thay vì booking_date vì booking_date dùng DEFAULT CURRENT_TIMESTAMP
         String sql = "SELECT rt.type_name, COUNT(*) as count " +
                      "FROM reservation r " +
                      "JOIN room rm ON r.room_id = rm.room_id " +
                      "JOIN room_type rt ON rm.type_id = rt.type_id " +
-                     "WHERE YEAR(r.booking_date) = ? AND MONTH(r.booking_date) = ? " +
+                     "WHERE YEAR(r.checkin_date) = ? AND MONTH(r.checkin_date) = ? " +
                      "GROUP BY rt.type_name";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -349,10 +353,12 @@ public class StatisticService {
 
     public List<Object[]> getServiceUsageForMonth(int year, int month) {
         List<Object[]> list = new ArrayList<>();
+        // Sử dụng checkin.checkin_time thay vì service_usage.created_at vì created_at dùng DEFAULT CURRENT_TIMESTAMP
         String sql = "SELECT s.service_name, SUM(su.quantity) as count " +
                      "FROM service_usage su " +
                      "JOIN service s ON su.service_id = s.service_id " +
-                     "WHERE YEAR(su.created_at) = ? AND MONTH(su.created_at) = ? " +
+                     "JOIN checkin ci ON su.checkin_id = ci.checkin_id " +
+                     "WHERE YEAR(ci.checkin_time) = ? AND MONTH(ci.checkin_time) = ? " +
                      "GROUP BY s.service_name";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
