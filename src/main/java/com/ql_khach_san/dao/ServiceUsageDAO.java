@@ -52,4 +52,17 @@ public class ServiceUsageDAO {
         }
         return false;
     }
+
+    public boolean isServiceUsed(int serviceId) {
+        String sql = "SELECT COUNT(*) FROM service_usage WHERE service_id = ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, serviceId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

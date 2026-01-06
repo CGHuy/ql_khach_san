@@ -301,16 +301,7 @@ public class ServicePanel extends JPanel {
         int id = Integer.parseInt(idText);
         // Kiểm tra dịch vụ có đang được sử dụng không
         com.ql_khach_san.dao.ServiceUsageDAO usageDAO = new com.ql_khach_san.dao.ServiceUsageDAO();
-        boolean isUsed = false;
-        try {
-            java.sql.Connection conn = com.ql_khach_san.config.DBConnection.getConnection();
-            String sql = "SELECT COUNT(*) FROM service_usage WHERE service_id = ?";
-            java.sql.PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, id);
-            java.sql.ResultSet rs = ps.executeQuery();
-            if (rs.next() && rs.getInt(1) > 0) isUsed = true;
-            rs.close(); ps.close(); conn.close();
-        } catch (Exception ex) { ex.printStackTrace(); }
+        boolean isUsed = usageDAO.isServiceUsed(id);
         if (isUsed) {
             JOptionPane.showMessageDialog(this, "Không thể xóa dịch vụ đang được sử dụng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
