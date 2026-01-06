@@ -707,7 +707,6 @@ public class DialogChiTiet extends JDialog {
             Invoice invoice = new Invoice(0, currentCheckinId, employeeId, totalRoom, totalService, totalPayment, LocalDateTime.now());
             if (invoiceDAO.insert(invoice)) {
                 roomService.checkOutRoom(roomView.getRoomId());
-
                 showMessage("Thanh toán thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 mainFrame.refreshRoomPanel();
                 this.dispose();

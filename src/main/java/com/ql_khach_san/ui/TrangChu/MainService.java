@@ -39,10 +39,10 @@ public class MainService {
             String floor = f != null ? String.valueOf(f.getFloor_number()) : "0";
             Color color = mapStatusToColor(r.getStatus());
 
-            // 1. Mặc định reservationId là 0 (hoặc -1) nếu phòng không phải 'Đã đặt'
+            // Mặc định reservationId là 0
             int resId = 0; 
 
-            // 2. Nếu trạng thái là "Đã đặt" hoặc "Đã thuê", đi lấy ID đơn đặt từ Database
+            // Lấy id đơn nếu phòng có đơn đặt
             if ("Đã đặt".equalsIgnoreCase(r.getStatus()) || "Đã thuê".equalsIgnoreCase(r.getStatus())) {
                 resId = roomDAO.getActiveReservationId(r.getRoomId());
             }
@@ -69,21 +69,6 @@ public class MainService {
             map.computeIfAbsent(v.getFloor(), k -> new ArrayList<>()).add(v);
         }
         return map;
-    }
-
-    public List<String> getFloors() {
-        Map<String, List<RoomView>> map = getRoomsGroupedByFloor();
-        List<String> floors = new ArrayList<>(map.keySet());
-        floors.sort((a, b) -> {
-            try { return Integer.compare(Integer.parseInt(a), Integer.parseInt(b)); }
-            catch (NumberFormatException e) { return a.compareTo(b); }
-        });
-        return floors;
-    }
-
-    public List<RoomView> getRoomsByFloor(String floor) {
-        Map<String, List<RoomView>> map = getRoomsGroupedByFloor();
-        return map.getOrDefault(floor, Collections.emptyList());
     }
 
     private Color mapStatusToColor(String status) {

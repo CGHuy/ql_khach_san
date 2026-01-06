@@ -25,25 +25,12 @@ public class RoomService {
         }
     }
     
-    // Lấy thông tin phòng theo ID
-    public Room getRoomById(int roomId) {
-        try {
-            return roomDAO.getById(roomId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // Trả phòng
-    public boolean checkOutRoom(int roomId) { return updateRoomStatus(roomId, "Đang dọn"); }
-    
     // Đặt phòng
     public boolean makeReservation(int roomId, int customerId, LocalDateTime checkin, LocalDateTime checkout) {
         Reservation res = new Reservation();
         res.setRoomId(roomId);
         res.setCustomerId(customerId);
-        res.setBookingDate(LocalDateTime.now()); // Thời gian đặt là hiện tại
+        res.setBookingDate(LocalDateTime.now());
         res.setCheckinDate(checkin);
         res.setCheckoutDate(checkout);
         res.setStatus("Đã đặt");
@@ -55,7 +42,11 @@ public class RoomService {
     public boolean cancelReservation(int reservationId) {
         Reservation res = reservationDAO.getById(reservationId);
         if (res != null) {
-            return reservationDAO.cancelReservationTransaction(res);
+            boolean ok = reservationDAO.cancelReservationTransaction(res);
+            if (ok) {
+                updateRoomStatus(res.getRoomId(), "Trống");
+            }
+            return ok;
         }
         return false;
     }
@@ -64,11 +55,19 @@ public class RoomService {
     public boolean checkInRoom(int reservationId) {
         Reservation res = reservationDAO.getById(reservationId);
         if (res != null) {
-            return reservationDAO.checkInReservationTransaction(res);
+            boolean ok = reservationDAO.checkInReservationTransaction(res);
+            if (ok) {
+                updateRoomStatus(res.getRoomId(), "Đã thuê");
+            }
+            return ok;
         }
         return false;
     }
     
+    // Trả phòng
+    public boolean checkOutRoom(int roomId) { return updateRoomStatus(roomId, "Đang dọn"); }
+    
     // Dọn dẹp xong
     public boolean checkClean(int roomId) { return updateRoomStatus(roomId, "Trống"); }
+    
 }

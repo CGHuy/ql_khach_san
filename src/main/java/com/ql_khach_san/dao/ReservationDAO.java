@@ -156,17 +156,11 @@ public class ReservationDAO {
 
     public boolean cancelReservationTransaction(Reservation res) {
         Connection conn = null;
-        PreparedStatement psRoom = null;
         PreparedStatement psRes = null;
 
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false); // Bắt đầu Transaction
-
-            String sqlRoom = "UPDATE room SET status = 'Trống' WHERE room_id = ?";
-            psRoom = conn.prepareStatement(sqlRoom);
-            psRoom.setInt(1, res.getRoomId());
-            psRoom.executeUpdate();
 
             String sqlRes = "UPDATE reservation SET status = 'Đã hủy' WHERE reservation_id = ?";
             psRes = conn.prepareStatement(sqlRes);
@@ -190,7 +184,6 @@ public class ReservationDAO {
         } finally {
             // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
             try {
-                if (psRoom != null) psRoom.close();
                 if (psRes != null) psRes.close();
                 if (conn != null) conn.close();
             } catch (SQLException e) {
@@ -201,19 +194,12 @@ public class ReservationDAO {
     
     public boolean checkInReservationTransaction(Reservation res) {
         Connection conn = null;
-        PreparedStatement psRoom = null;
         PreparedStatement psRes = null;
         PreparedStatement psCheckin = null;
 
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false); // Bắt đầu Transaction
-
-            // Cập nhật trạng thái phòng
-            String sqlRoom = "UPDATE room SET status = 'Đã thuê' WHERE room_id = ?";
-            psRoom = conn.prepareStatement(sqlRoom);
-            psRoom.setInt(1, res.getRoomId());
-            psRoom.executeUpdate();
 
             // Cập nhật trạng thái reservation
             String sqlRes = "UPDATE reservation SET status = 'Đã nhận phòng' WHERE reservation_id = ?";
@@ -246,7 +232,6 @@ public class ReservationDAO {
         } finally {
             // Đóng tài nguyên thủ công vì không dùng try-with-resources cho Transaction được
             try {
-                if (psRoom != null) psRoom.close();
                 if (psRes != null) psRes.close();
                 if (psCheckin != null) psCheckin.close();
                 if (conn != null) conn.close();

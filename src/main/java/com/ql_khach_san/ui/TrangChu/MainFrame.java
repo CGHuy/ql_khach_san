@@ -25,7 +25,7 @@ public class MainFrame extends JFrame {
     
     private static final String[] MENU_ITEMS = {
         "Loại Phòng", "Tầng", "Phòng", "Dịch Vụ", "Khách Hàng", 
-        "Nhân Viên", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"
+        "Nhân Viên","Hóa Đơn", "Thống Kê", "Thời Gian", "Đổi Mật Khẩu", "Đăng Xuất"
     };
     
     // Services
@@ -146,6 +146,11 @@ public class MainFrame extends JFrame {
             case "Nhân Viên":
                 button.addActionListener(e -> openWindow(
                     new com.ql_khach_san.ui.NhanVien.NhanVienGUI()
+                ));
+                break;
+            case "Hóa Đơn":
+                button.addActionListener(e -> openWindow(
+                    new com.ql_khach_san.ui.HoaDon.GUI()
                 ));
                 break;
             case "Thống Kê":
