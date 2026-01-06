@@ -35,9 +35,6 @@ public class RoomService {
         }
     }
 
-    // Nhận phòng (check-in)
-    public boolean checkInRoom(int roomId) { return updateRoomStatus(roomId, "Đã thuê"); }
-
     // Trả phòng
     public boolean checkOutRoom(int roomId) { return updateRoomStatus(roomId, "Đang dọn"); }
     
@@ -64,7 +61,7 @@ public class RoomService {
     }
     
     // Nhận phòng (check-in)
-    public boolean checkInReservation(int reservationId) {
+    public boolean checkInRoom(int reservationId) {
         Reservation res = reservationDAO.getById(reservationId);
         if (res != null) {
             return reservationDAO.checkInReservationTransaction(res);

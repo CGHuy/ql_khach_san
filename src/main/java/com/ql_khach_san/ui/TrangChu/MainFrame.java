@@ -133,6 +133,11 @@ public class MainFrame extends JFrame {
                     new com.ql_khach_san.ui.RoomType.GUI()
                 ));
                 break;
+            case "Tầng":
+                button.addActionListener(e -> openWindow(
+                    new com.ql_khach_san.ui.Tang.GUI()
+                ));
+                break;
             case "Khách Hàng":
                 button.addActionListener(e -> openWindow(
                     new com.ql_khach_san.ui.KhachHang.GUI()
@@ -339,7 +344,7 @@ public class MainFrame extends JFrame {
         JMenuItem item = new JMenuItem("Nhận phòng");
         item.addActionListener(e -> {
             if (confirmAction("Khách đã tới nhận phòng " + room.getRoomNumber(), "Thông báo nhận phòng")) {
-                roomService.checkInReservation(room.getReservationId());
+                roomService.checkInRoom(room.getReservationId());
                 showMessage("Đã nhận phòng " + room.getRoomNumber() + " thành công!");
                 refreshRoomPanel();
             }

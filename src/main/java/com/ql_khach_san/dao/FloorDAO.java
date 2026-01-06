@@ -87,6 +87,41 @@ public class FloorDAO {
         return false;
     }
 
+    public boolean hasRooms(int floorId) {
+        String sql = "SELECT COUNT(*) FROM room WHERE floor_id = ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, floorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    return count > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
+        }
+        return false;
+    }
+
+    public boolean isFloorNumberExists(int floorNumber, int excludeFloorId) {
+        String sql = "SELECT COUNT(*) FROM floor WHERE floor_number = ? AND floor_id != ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, floorNumber);
+            ps.setInt(2, excludeFloorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    return count > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lastError = e.getMessage();
+        }
+        return false;
+    }
+
     // ===== Management UI Methods (với suffix _forMgmt) =====
     public List<Floor> getAll_forMgmt() { return getAll(); }
     public Floor getById_forMgmt(int id) { return getById(id); }
