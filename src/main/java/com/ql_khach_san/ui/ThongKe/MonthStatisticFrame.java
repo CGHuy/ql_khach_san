@@ -22,7 +22,7 @@ public class MonthStatisticFrame extends JFrame {
     private StatisticService service = new StatisticService();
     private ChartPanel chartPanel;
     private JPanel kpiPanel;
-    private JLabel lblBooked, lblUsed, lblDelta;
+    private JLabel lblBooked, lblUsed, lblDelta, lblTotalRevenue;
     private ChartPanel pieRoomPanel;
     private ChartPanel pieRoomBookedPanel;
     private ChartPanel pieServicePanel;
@@ -109,7 +109,16 @@ public class MonthStatisticFrame extends JFrame {
     }
 
     private JPanel createKpiPanel() {
-        JPanel p = new JPanel(new GridLayout(1, 3, 5, 5));
+        JPanel p = new JPanel(new GridLayout(1, 4, 5, 5));
+
+        lblTotalRevenue = new JLabel("0", SwingConstants.CENTER);
+        lblTotalRevenue.setFont(lblTotalRevenue.getFont().deriveFont(16f).deriveFont(Font.BOLD));
+        lblTotalRevenue.setForeground(new Color(0, 128, 0)); // Green color
+        JLabel descRevenue = new JLabel("Tổng doanh thu", SwingConstants.CENTER);
+        JPanel tile0 = new JPanel(new BorderLayout());
+        tile0.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        tile0.add(lblTotalRevenue, BorderLayout.CENTER);
+        tile0.add(descRevenue, BorderLayout.SOUTH);
 
         lblBooked = new JLabel("0", SwingConstants.CENTER);
         lblBooked.setFont(lblBooked.getFont().deriveFont(16f).deriveFont(Font.BOLD));
@@ -129,13 +138,13 @@ public class MonthStatisticFrame extends JFrame {
 
         lblDelta = new JLabel("0", SwingConstants.CENTER);
         lblDelta.setFont(lblDelta.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        JLabel descDelta = new JLabel("Chênh lệch (Booked - Used)", SwingConstants.CENTER);
+        JLabel descDelta = new JLabel("Chênh lệch", SwingConstants.CENTER);
         JPanel tile3 = new JPanel(new BorderLayout());
         tile3.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         tile3.add(lblDelta, BorderLayout.CENTER);
         tile3.add(descDelta, BorderLayout.SOUTH);
 
-        p.add(tile1); p.add(tile2); p.add(tile3);
+        p.add(tile0); p.add(tile1); p.add(tile2); p.add(tile3);
         return p;
     }
 
@@ -149,16 +158,21 @@ public class MonthStatisticFrame extends JFrame {
         DecimalFormat df = new DecimalFormat("#,##0");
 
         // Daily revenue
+        double totalRevenue = 0.0;
         List<String[]> daily = service.getDailyRevenueForMonth(year, month);
         for (String[] r : daily) {
             String dayLabel = r[0].length() >= 10 ? r[0].substring(8) : r[0];
             double val = 0.0;
             try { val = Double.parseDouble(r[1]); } catch (Exception ex) { }
+            totalRevenue += val;
             tableModel.addRow(new Object[]{dayLabel, df.format(val)});
             dataset.addValue(val, "Doanh thu", dayLabel);
         }
         chartPanel.setChart(ChartFactory.createBarChart("Doanh thu theo ngày trong tháng " + String.format("%04d-%02d", year, month), "Ngày", "Doanh thu", dataset));
         formatChart(chartPanel);
+
+        // Update total revenue label
+        lblTotalRevenue.setText(df.format(totalRevenue) + " đ");
 
         // Compute KPI totals for month
         int totalUsed = 0;
