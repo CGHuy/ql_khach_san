@@ -162,6 +162,16 @@ public class MainFrame extends JFrame {
             case "Dịch Vụ":
                 button.addActionListener(e -> openServicePanel());
                 break;
+            case "Đăng Xuất":
+                button.addActionListener(e -> {
+                    int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn đăng xuất?", "Đăng xuất", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        // Open login form and close main frame
+                        new com.ql_khach_san.main.LoginFrame().setVisible(true);
+                        this.dispose();
+                    }
+                });
+                break;
         }
     }
     
